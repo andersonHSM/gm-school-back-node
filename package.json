@@ -6,7 +6,8 @@
   "scripts": {
     "devStart": "NODE_ENV=development nodemon -r tsconfig-paths/register ./src/index.ts",
     "start": "node ./build/App.js",
-    "build": "tsc"
+    "build": "tsc",
+    "create-migration": "node -r dotenv/config && knex migrate:make <arg-here> -x ts"
   },
   "keywords": [],
   "author": "",

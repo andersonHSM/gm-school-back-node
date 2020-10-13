@@ -9,4 +9,7 @@ RUN [ "npm", "i" ]
 
 COPY src ./src
 
+RUN [ "npm", "i", "-g", "knex" ]
+
+
 CMD [ "npm", "run", "devStart" ]

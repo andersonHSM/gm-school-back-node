@@ -1,6 +1,6 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
 
-import App from "./app/app";
+import App from './app/app';
 
 App();

@@ -1,7 +1,7 @@
-import { init as Loaders } from "@loaders/index";
-import Config from "@config/index";
+import { init as Loaders } from '@loaders/index';
+import Config from '@config/index';
 
-import express from "express";
+import express from 'express';
 
 const startServer = async () => {
   const app = express();

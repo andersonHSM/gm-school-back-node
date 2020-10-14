@@ -1,2 +1,2 @@
-export { BaseController } from "./base-controller-model";
-export {} from "./";
+export { BaseController } from './base-controller-model';
+export {} from './';

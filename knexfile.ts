@@ -1,5 +1,5 @@
 // Update with your config settings.
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -16,7 +16,7 @@ console.log({
     max: 10,
   },
   migrations: {
-    tableName: "knex_migrations",
+    tableName: 'knex_migrations',
   },
 });
 
@@ -32,6 +32,6 @@ module.exports = {
     max: 10,
   },
   migrations: {
-    tableName: "knex_migrations",
+    tableName: 'knex_migrations',
   },
 };

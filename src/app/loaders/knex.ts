@@ -1,14 +1,14 @@
 import Knex from 'knex';
-import Config from '@config/index';
+import { EnviromentConfig } from '@config/index';
 
 export default () => {
   return Knex({
-    client: Config.dbClient,
+    client: EnviromentConfig.dbClient,
     connection: {
-      host: Config.dbHost ?? '0.0.0.0',
-      port: Config.dbPort ?? 3010,
-      user: Config.dbUser ?? 'root',
-      password: Config.dbPassword ?? '123456',
+      host: EnviromentConfig.dbHost ?? '0.0.0.0',
+      port: EnviromentConfig.dbPort ?? 3010,
+      user: EnviromentConfig.dbUser ?? 'root',
+      password: EnviromentConfig.dbPassword ?? '123456',
     },
   });
 };

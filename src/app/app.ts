@@ -1,5 +1,5 @@
 import { init as Loaders } from '@loaders/index';
-import Config from '@config/index';
+import { EnviromentConfig } from '@config/index';
 
 import express from 'express';
 
@@ -8,7 +8,7 @@ const startServer = async () => {
 
   await Loaders(app);
 
-  app.listen(Config.port, () => {});
+  app.listen(EnviromentConfig.port, () => {});
 };
 
 export default startServer;

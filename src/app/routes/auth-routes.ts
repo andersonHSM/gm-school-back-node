@@ -1,11 +1,23 @@
 import { Router } from 'express';
 import { AuthController } from '@controllers/index';
+import { AuthService, JwtService } from '@services/index';
+
+import { EnviromentConfig, KnexInstance } from '@config/index';
 
 export const authRoutes = (router: Router): Router => {
-  const authController = new AuthController();
+  const jwtService = new JwtService(EnviromentConfig);
 
-  const { show } = authController;
+  const authService = new AuthService(jwtService, KnexInstance);
+
+  const authController = new AuthController(authService);
+
+  const { show /* store */ } = authController;
+
   router.post('/login', show);
+
+  router.post('/signup', (req, res) => {
+    authController.store(req as any, res);
+  });
 
   return router;
 };

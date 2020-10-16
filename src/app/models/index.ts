@@ -1,2 +1,3 @@
 export { BaseController } from './base-controller-model';
-export {} from './';
+export { BaseService } from './base-service-model';
+export { EnvConfig } from './env-config-model';

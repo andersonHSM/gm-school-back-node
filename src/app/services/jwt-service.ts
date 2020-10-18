@@ -15,7 +15,7 @@ export class JwtService {
     return jwt.verify(token, jwtSecurePassword);
   }
 
-  createToken(userId: number) {
+  createToken(userId: string) {
     const { jwtExpiresIn, jwtSecurePassword } = this._config;
     const token = jwt.sign({ userId }, jwtSecurePassword, { expiresIn: jwtExpiresIn });
 

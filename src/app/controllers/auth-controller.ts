@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 import { BaseController } from '@models/index';
 import { AuthService } from '@services/index';
-import { SignUpRequest } from '@models/requests/auth';
+import { LoginRequest, SignUpRequest } from '@models/requests/auth';
 import { HttpException } from '../exception';
 
 export class AuthController implements BaseController {
@@ -21,9 +21,7 @@ export class AuthController implements BaseController {
         return res.status(error.statusCode).json(error.format());
       }
 
-      console.log(error);
-
-      return res.status(500).json({ error });
+      return res.status(500).json(error);
     }
   };
 
@@ -35,8 +33,16 @@ export class AuthController implements BaseController {
     throw new Error('Method not implemented.');
   }
 
-  show = (_req: Request, res: Response): void => {
-    res.status(200).send('OK');
+  show = async (req: Request<null, null, LoginRequest>, res: Response) => {
+    try {
+      const payload = await this.authService.signIn(req.body);
+
+      return res.status(200).json(payload);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+    }
   };
 
   index() {

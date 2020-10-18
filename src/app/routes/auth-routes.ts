@@ -11,13 +11,11 @@ export const authRoutes = (router: Router): Router => {
 
   const authController = new AuthController(authService);
 
-  const { show /* store */ } = authController;
+  const { show, store } = authController;
 
   router.post('/login', show);
 
-  router.post('/signup', (req, res) => {
-    authController.store(req as any, res);
-  });
+  router.post('/signup', store);
 
   return router;
 };

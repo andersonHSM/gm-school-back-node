@@ -1,9 +1,10 @@
-import { BaseAuthRequest } from '@models/requests/auth/';
+import { BaseAuthRequest, PersonalDataRequest } from '@models/requests/auth/';
 
 interface SignUpRequest extends BaseAuthRequest {
-  firstName: string;
-  middleNames?: string;
-  lastName: string;
+  first_name: string;
+  middle_names?: string;
+  last_name: string;
+  personal_data: PersonalDataRequest;
 }
 
 export { SignUpRequest };

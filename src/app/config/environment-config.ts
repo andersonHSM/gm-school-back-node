@@ -10,6 +10,7 @@ const EnviromentConfig: EnvConfig = {
   dbName: process.env.DB_NAME!,
   jwtExpiresIn: (process.env.JWT_EXPIRES_IN! as unknown) as number,
   jwtSecurePassword: process.env.JWT_SECURE_PASSWORD!,
+  passwordHashRounds: process.env.PASSWORD_HASH_ROUNDS!,
 };
 
 export { EnviromentConfig };

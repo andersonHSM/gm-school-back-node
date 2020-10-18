@@ -7,7 +7,7 @@ import { EnviromentConfig, KnexInstance } from '@config/index';
 export const authRoutes = (router: Router): Router => {
   const jwtService = new JwtService(EnviromentConfig);
 
-  const authService = new AuthService(jwtService, KnexInstance);
+  const authService = new AuthService(jwtService, KnexInstance, EnviromentConfig);
 
   const authController = new AuthController(authService);
 

@@ -8,6 +8,7 @@ interface EnvConfig {
   dbName: string;
   jwtSecurePassword: string;
   jwtExpiresIn: number;
+  passwordHashRounds: string;
 }
 
 export { EnvConfig };

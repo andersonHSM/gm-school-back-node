@@ -63,7 +63,7 @@ class AuthService {
 
       const token = this.jwtService.createToken(user_guid as string);
 
-      return { token, user_guid };
+      return { token, ...user };
     } catch (error) {
       throw error;
     }

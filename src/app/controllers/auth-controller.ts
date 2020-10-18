@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { BaseController } from '@models/index';
 import { AuthService } from '@services/index';
 import { LoginRequest, SignUpRequest } from '@models/requests/auth';
-import { HttpException } from '../exception';
+import { HttpException } from '@exceptions/index';
 
 export class AuthController implements BaseController {
   constructor(private authService: AuthService) {}

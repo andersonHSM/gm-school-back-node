@@ -2,9 +2,15 @@ import express, { json, Request, Response } from 'express';
 import cors from 'cors';
 
 import { authRoutes } from '@routes/index';
+import { JwtService } from '@services/index';
+import { EnviromentConfig } from '@config/index';
+import { AuthMiddleware } from '@middlewares/index';
 
 export default async (app: express.Application) => {
   const router = express.Router();
+
+  const jwtService = new JwtService(EnviromentConfig);
+  const { validate: authMiddleware } = new AuthMiddleware(jwtService);
 
   app.use(cors());
   app.use(json());
@@ -14,6 +20,8 @@ export default async (app: express.Application) => {
   });
 
   app.use('/auth', authRoutes(router));
+
+  app.use(authMiddleware);
 
   return app;
 };

@@ -15,7 +15,8 @@ class AuthMiddleware {
     }
 
     try {
-      this.jwtService.validateToken(token);
+      const validatedToken = this.jwtService.validateToken(token);
+      (req as any).user_guid = (validatedToken as any).user_guid;
       return next();
     } catch (error) {
       const exception = new HttpException('Invalid token provided', 706, 400);

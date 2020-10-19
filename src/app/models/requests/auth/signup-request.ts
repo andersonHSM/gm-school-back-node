@@ -4,6 +4,7 @@ interface SignUpRequest extends BaseAuthRequest {
   first_name: string;
   middle_names?: string;
   last_name: string;
+  role: string;
   personal_data: PersonalDataRequest;
 }
 

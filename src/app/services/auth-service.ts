@@ -44,9 +44,17 @@ class AuthService {
       throw new HttpException('A user already exists with supplied e-mail', 701, 400);
     }
 
-    const user = await this.insertUserInTable(signUpRequest, this.userQueryReturningStatement);
+    const { role, ...remainingSignupRequest } = signUpRequest;
+
+    const user = await this.insertUserInTable(
+      remainingSignupRequest,
+      this.userQueryReturningStatement
+    );
 
     const { user_guid } = user;
+    console.log('oi');
+
+    await this.setUserRole(user_guid as string, signUpRequest.role);
 
     const personal_data = await this.insertPersonalData(
       user_guid as Uint8Array,
@@ -127,7 +135,7 @@ class AuthService {
   };
 
   private insertUserInTable = async (
-    userData: SignUpRequest,
+    userData: Omit<SignUpRequest, 'role'>,
     returningStatement: string[]
   ): Promise<UserModel> => {
     const { password, personal_data, ...signUp } = userData;
@@ -171,6 +179,25 @@ class AuthService {
       .returning(queryReturningStatement);
 
     return queryReturn;
+  };
+
+  private setUserRole = async (user_guid: string, role_description: string) => {
+    const role = await this.knex('role')
+      .select(['role_guid', 'description'])
+      .where({ description: role_description })
+      .first();
+
+    const { role_guid } = role;
+
+    console.log({ role, user_guid });
+
+    const user_role_guid = uuidv4();
+
+    await this.knex('user_role').insert({
+      user_role_guid: uuidParse(user_role_guid),
+      user_guid: uuidParse(user_guid),
+      role_guid,
+    });
   };
 }
 

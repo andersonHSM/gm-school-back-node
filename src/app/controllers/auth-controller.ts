@@ -9,8 +9,16 @@ export class AuthController implements BaseController {
   constructor(private authService: AuthService) {}
 
   store = async (req: Request<null, null, SignUpRequest>, res: Response) => {
-    const { email, password, first_name, middle_names, last_name, personal_data } = req.body;
-    const signUpRequest = { email, password, first_name, middle_names, last_name, personal_data };
+    const { email, password, first_name, middle_names, last_name, personal_data, role } = req.body;
+    const signUpRequest = {
+      email,
+      password,
+      first_name,
+      middle_names,
+      last_name,
+      personal_data,
+      role,
+    };
 
     try {
       const insertUserReturn = await this.authService.signUp(signUpRequest);

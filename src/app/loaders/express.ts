@@ -23,7 +23,7 @@ export default async (app: express.Application) => {
 
   app.use(authMiddleware as Handler);
 
-  app.use('/user', userRoutes(router));
+  app.use('/users', userRoutes(router));
 
   return app;
 };

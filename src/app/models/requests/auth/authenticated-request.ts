@@ -1,6 +1,4 @@
-import { Request } from 'express';
-
-interface AuthenticatedRequest extends Request {
+interface AuthenticatedRequest {
   user_guid: string;
 }
 

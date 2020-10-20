@@ -52,7 +52,6 @@ class AuthService {
     );
 
     const { user_guid } = user;
-    console.log('oi');
 
     await this.setUserRole(user_guid as string, signUpRequest.role);
 
@@ -188,8 +187,6 @@ class AuthService {
       .first();
 
     const { role_guid } = role;
-
-    console.log({ role, user_guid });
 
     const user_role_guid = uuidv4();
 

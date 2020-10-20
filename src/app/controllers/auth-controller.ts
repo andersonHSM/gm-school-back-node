@@ -9,25 +9,16 @@ export class AuthController implements BaseController {
   constructor(private authService: AuthService) {}
 
   store = async (req: Request<null, null, SignUpRequest>, res: Response) => {
-    const { email, password, first_name, middle_names, last_name, personal_data, role } = req.body;
-    const signUpRequest = {
-      email,
-      password,
-      first_name,
-      middle_names,
-      last_name,
-      personal_data,
-      role,
-    };
-
     try {
-      const insertUserReturn = await this.authService.signUp(signUpRequest);
+      const insertUserReturn = await this.authService.signUp(req.body);
 
       return res.status(200).json(insertUserReturn);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
+
+      console.log({ error });
 
       return res.status(500).json(error);
     }

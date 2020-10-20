@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import { EnvConfig } from '@models/index';
 import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
 import { HttpException } from '@exceptions/index';
-import { UserModel } from '@models/entities';
+import { Address, UserModel } from '@models/entities';
 import { PersonalData } from '@models/entities/personal-data-model';
 
 class AuthService {
@@ -44,7 +44,10 @@ class AuthService {
       throw new HttpException('A user already exists with supplied e-mail', 701, 400);
     }
 
-    const { role, ...remainingSignupRequest } = signUpRequest;
+    const { role, address: addressPayload, ...remainingSignupRequest } = signUpRequest;
+
+    let address: Address | null = null;
+    let address_guid: string;
 
     const user = await this.insertUserInTable(
       remainingSignupRequest,
@@ -52,6 +55,37 @@ class AuthService {
     );
 
     const { user_guid } = user;
+    console.log('oi');
+
+    if (addressPayload) {
+      address_guid = uuidv4();
+
+      try {
+        const [addressQueryReturn]: Address[] = await this.knex('address')
+          .insert({
+            ...addressPayload,
+            address_guid: uuidParse(address_guid),
+          })
+          .returning([
+            'street',
+            'number',
+            'district',
+            'zip_code',
+            'complement',
+            'city',
+            'state',
+            'country',
+          ]);
+
+        await this.knex('user')
+          .where({ user_guid })
+          .update({ address_guid: uuidParse(address_guid) });
+
+        address = { ...addressQueryReturn };
+      } catch (error) {
+        throw new HttpException('Invalid address payload', 710, 400);
+      }
+    }
 
     await this.setUserRole(user_guid as string, signUpRequest.role);
 
@@ -60,7 +94,7 @@ class AuthService {
       signUpRequest.personal_data
     );
 
-    return { ...user, personal_data };
+    return { ...user, personal_data, address };
   };
 
   signIn = async (loginRequest: LoginRequest) => {
@@ -87,7 +121,7 @@ class AuthService {
     userReturningStatement: string[],
     personalDataReturningStatement: string[],
     isLogin?: boolean
-  ): Promise<UserModel | null | undefined> => {
+  ): Promise<(UserModel & { personal_data: PersonalData }) | null | undefined> => {
     const { email, password } = loginRequest;
 
     if (!email || !password) {

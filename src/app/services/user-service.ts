@@ -1,5 +1,5 @@
 import { HttpException } from '@exceptions/index';
-import { UserModel, Role } from '@models/entities';
+import { UserModel, Role, Address } from '@models/entities';
 import { RolesEnum } from '@models/enums';
 import { UserPatchRequestPayload } from '@models/requests/user';
 import Knex from 'knex';
@@ -60,17 +60,29 @@ class UserService {
 
     const parsedUserGuid = uuidParse(userToUpdateGuid);
 
-    const user = await this.knex('user')
+    const [user] = await this.knex('user')
       .where('user_guid', parsedUserGuid)
       .update(userPayload)
-      .returning(this.userQueryReturningStatement);
+      .returning([...this.userQueryReturningStatement, 'address_guid']);
 
-    const personal_data = await this.knex('personal_data')
+    const { address_guid, ...userReturn } = user;
+
+    let address: Address | null;
+
+    if (addressPayload && !address_guid) {
+      throw new HttpException('User must have a valid address to be updated', 709, 404);
+    }
+
+    address = addressPayload
+      ? await this.knex('address').where({ address_guid }).update(addressPayload)
+      : null;
+
+    const [personal_data] = await this.knex('personal_data')
       .where('user_guid', parsedUserGuid)
       .update(personalDataPayload)
-      .returning(Object.keys(personalDataPayload));
+      .returning(['cpf', 'rg', 'uf_rg', 'rg_emitter']);
 
-    return { ...user, user_guid: userToUpdateGuid, personal_data };
+    return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
   };
 
   private getUserRole = async (user_guid: string): Promise<Role> => {

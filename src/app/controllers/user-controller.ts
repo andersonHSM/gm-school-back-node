@@ -53,13 +53,18 @@ class UserController implements BaseController {
       const { user_guid: requestUserGuid } = req;
       const { user_guid: paramsUserGuid } = req.params;
 
-      await this.userService.updateUser(requestUserGuid, paramsUserGuid, req.body);
+      const returnObject = await this.userService.updateUser(
+        requestUserGuid,
+        paramsUserGuid,
+        req.body
+      );
 
-      return res.status(200).json();
+      return res.status(200).json(returnObject);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
+      console.log({ error });
       return res.status(500).json('Unkown error');
     }
   };

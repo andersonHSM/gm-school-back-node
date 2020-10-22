@@ -1,14 +1,18 @@
+import { Address, PersonalData, Role, User } from '@database/accessors';
 import { HttpException } from '@exceptions/index';
-import { UserModel, Role, Address } from '@models/entities';
+import { UserModel, AddressModel } from '@models/entities';
 import { RolesEnum } from '@models/enums';
 import { UserPatchRequestPayload } from '@models/requests/user';
-import Knex from 'knex';
-import { stringify as uuidStringify, parse as uuidParse } from 'uuid';
 
 class UserService {
-  constructor(private knex: Knex) {}
+  constructor(
+    private readonly user: User,
+    private readonly address: Address,
+    private readonly personalData: PersonalData,
+    private readonly role: Role
+  ) {}
 
-  private userQueryReturningStatement = [
+  private readonly userQueryReturningStatement = [
     'user.user_guid',
     'user.email',
     'user.first_name',
@@ -17,19 +21,11 @@ class UserService {
   ];
 
   getAllUsers = async (user_guid: string) => {
-    const role = await this.getUserRole(user_guid);
+    const role = await this.role.getRoleByUser(user_guid);
 
     switch (role.description) {
       case RolesEnum.administrator:
-        let users: UserModel[] = await this.knex('user')
-          .select(this.userQueryReturningStatement)
-          .whereNull('deleted_at');
-
-        users = users.map(user => {
-          const { user_guid } = user;
-
-          return { ...user, user_guid: uuidStringify(user_guid as Uint8Array) };
-        });
+        let users: UserModel[] = await this.user.getAllUsers(this.userQueryReturningStatement);
 
         return users;
 
@@ -44,9 +40,7 @@ class UserService {
   deleteUser = async (requestUserGuid: string, userToDeleteGuid: string) => {
     await this.validateUsersRoles(requestUserGuid, userToDeleteGuid);
 
-    await this.knex('user')
-      .where('user_guid', uuidParse(userToDeleteGuid))
-      .update({ deleted_at: this.knex.fn.now() });
+    await this.user.deleteUser(userToDeleteGuid);
   };
 
   updateUser = async (
@@ -58,68 +52,46 @@ class UserService {
 
     const { personal_data: personalDataPayload, address: addressPayload, ...userPayload } = payload;
 
-    const parsedUserGuid = uuidParse(userToUpdateGuid);
-
-    const [user] = await this.knex('user')
-      .where('user_guid', parsedUserGuid)
-      .update(userPayload)
-      .returning([...this.userQueryReturningStatement, 'address_guid']);
+    const user: UserModel & Pick<AddressModel, 'address_guid'> = await this.user.updateUser(
+      userToUpdateGuid,
+      [...this.userQueryReturningStatement, 'address_guid'],
+      userPayload
+    );
 
     const { address_guid, ...userReturn } = user;
 
-    let address: Address | null;
+    let address: AddressModel | null;
 
     if (addressPayload && !address_guid) {
       throw new HttpException('User must have a valid address to be updated', 709, 404);
     }
 
-    address = addressPayload
-      ? await this.knex('address').where({ address_guid }).update(addressPayload)
-      : null;
+    address =
+      address_guid && addressPayload
+        ? await this.address.updateAddress(address_guid as Uint8Array, addressPayload)
+        : null;
 
-    const [personal_data] = await this.knex('personal_data')
-      .where('user_guid', parsedUserGuid)
-      .update(personalDataPayload)
-      .returning(['cpf', 'rg', 'uf_rg', 'rg_emitter']);
+    const { personal_data_guid, ...personal_data } = await this.personalData.updatePersonalData(
+      userToUpdateGuid,
+      ['cpf', 'rg', 'uf_rg', 'rg_emitter', 'personal_data_guid'],
+      personalDataPayload
+    );
 
     return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
   };
 
-  private getUserRole = async (user_guid: string): Promise<Role> => {
-    const binaryUserGuid = uuidParse(user_guid);
-
-    const user_role = await this.knex('user_role').where({ user_guid: binaryUserGuid }).first();
-
-    if (!user_role) {
-    }
-
-    const role: Role = await this.knex('role')
-      .where({ role_guid: user_role.role_guid })
-      .whereNull('deleted_at')
-      .first();
-
-    return { ...role, role_guid: uuidStringify(role.role_guid as Uint8Array) };
-  };
-
-  private getUsersFromDb = async (user_guid: string): Promise<UserModel[]> => {
-    return this.knex('user')
-      .select(this.userQueryReturningStatement)
-      .where('user_guid', uuidParse(user_guid))
-      .whereNull('deleted_at');
-  };
-
   private validateUsersRoles = async (requestUserGuid: string, targetUserGuid: string) => {
-    const [[requestUser], [userToDelete]] = await Promise.all([
-      this.getUsersFromDb(requestUserGuid),
-      this.getUsersFromDb(targetUserGuid),
+    const [requestUser, userToDelete] = await Promise.all([
+      this.user.getUser(requestUserGuid, this.userQueryReturningStatement),
+      this.user.getUser(targetUserGuid, this.userQueryReturningStatement),
     ]);
 
     if (!requestUser || !userToDelete) {
       throw new HttpException('User not found', 704, 404);
     }
 
-    const requestUserRole = await this.getUserRole(requestUserGuid);
-    const userToDeleteRole = await this.getUserRole(targetUserGuid);
+    const requestUserRole = await this.role.getRoleByUser(requestUserGuid);
+    const userToDeleteRole = await this.role.getRoleByUser(targetUserGuid);
 
     if (
       requestUserGuid !== targetUserGuid &&

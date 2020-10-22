@@ -6,7 +6,7 @@ import { LoginRequest, SignUpRequest } from '@models/requests/auth';
 import { HttpException } from '@exceptions/index';
 
 export class AuthController implements BaseController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   store = async (req: Request<null, null, SignUpRequest>, res: Response) => {
     try {
@@ -17,8 +17,6 @@ export class AuthController implements BaseController {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
-
-      console.log({ error });
 
       return res.status(500).json(error);
     }

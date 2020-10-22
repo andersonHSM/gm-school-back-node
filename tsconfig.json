@@ -35,7 +35,7 @@
     // "alwaysStrict": true,                  /* Parse in strict mode and emit "use strict" for each source file. */
 
     /* Additional Checks */
-    "noUnusedLocals": true /* Report errors on unused locals. */,
+    // "noUnusedLocals": true /* Report errors on unused locals. */,
     "noUnusedParameters": true /* Report errors on unused parameters. */,
     // "noImplicitReturns": true,             /* Report error when not all code paths in function return a value. */
     // "noFallthroughCasesInSwitch": true,    /* Report errors for fallthrough cases in switch statement. */
@@ -51,7 +51,8 @@
       "@routes/*": ["src/app/routes/*"],
       "@services/*": ["src/app/services/*"],
       "@middlewares/*": ["src/app/middlewares/*"],
-      "@exceptions/*": ["src/app/exceptions/*"]
+      "@exceptions/*": ["src/app/exceptions/*"],
+      "@database/*": ["src/app/database/*"]
     } /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */,
     // "rootDirs": [],                        /* List of root folders whose combined content represents the structure of the project at runtime. */
     // "typeRoots": [],                       /* List of folders to include type definitions from. */

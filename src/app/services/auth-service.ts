@@ -5,17 +5,16 @@ import bcrypt from 'bcrypt';
 import { EnvConfig } from '@models/index';
 import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
 import { HttpException } from '@exceptions/index';
-import { Address, UserModel } from '@models/entities';
-import { PersonalData } from '@models/entities/personal-data-model';
+import { AddressModel, UserModel, PersonalDataModel } from '@models/entities';
 
 class AuthService {
   constructor(
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
     private knex: Knex,
     private environmentConfig: EnvConfig
   ) {}
 
-  private userQueryReturningStatement = [
+  private readonly userQueryReturningStatement = [
     'user.user_guid',
     'user.email',
     'user.first_name',
@@ -46,7 +45,7 @@ class AuthService {
 
     const { role, address: addressPayload, ...remainingSignupRequest } = signUpRequest;
 
-    let address: Address | null = null;
+    let address: AddressModel | null = null;
     let address_guid: string;
 
     const user = await this.insertUserInTable(
@@ -55,13 +54,12 @@ class AuthService {
     );
 
     const { user_guid } = user;
-    console.log('oi');
 
     if (addressPayload) {
       address_guid = uuidv4();
 
       try {
-        const [addressQueryReturn]: Address[] = await this.knex('address')
+        const [addressQueryReturn]: AddressModel[] = await this.knex('address')
           .insert({
             ...addressPayload,
             address_guid: uuidParse(address_guid),
@@ -88,6 +86,10 @@ class AuthService {
     }
 
     await this.setUserRole(user_guid as string, signUpRequest.role);
+
+    if (!signUpRequest.personal_data) {
+      throw new HttpException('User personal data must be provider', 711, 400);
+    }
 
     const personal_data = await this.insertPersonalData(
       user_guid as Uint8Array,
@@ -121,7 +123,7 @@ class AuthService {
     userReturningStatement: string[],
     personalDataReturningStatement: string[],
     isLogin?: boolean
-  ): Promise<(UserModel & { personal_data: PersonalData }) | null | undefined> => {
+  ): Promise<(UserModel & { personal_data: PersonalDataModel }) | null | undefined> => {
     const { email, password } = loginRequest;
 
     if (!email || !password) {
@@ -129,7 +131,9 @@ class AuthService {
     }
 
     try {
-      const user: UserModel & { password_hash: string } & PersonalData = await this.knex('user')
+      const user: UserModel & { password_hash: string } & PersonalDataModel = await this.knex(
+        'user'
+      )
         .select([...userReturningStatement, 'password_hash'])
         .where({ email })
         .first();
@@ -150,7 +154,7 @@ class AuthService {
 
       const { user_guid } = user;
 
-      const personal_data: PersonalData = await this.knex('personal_data')
+      const personal_data: PersonalDataModel = await this.knex('personal_data')
         .where({
           user_guid,
         })
@@ -197,7 +201,7 @@ class AuthService {
   private insertPersonalData = async (
     user_guid: string | Uint8Array,
     personal_data: PersonalDataRequest
-  ): Promise<PersonalData> => {
+  ): Promise<PersonalDataModel> => {
     const queryReturningStatement = ['cpf', 'rg', 'uf_rg', 'rg_emitter'];
     const personal_data_guid = uuidParse(uuidv4());
 

@@ -1,4 +1,4 @@
-export interface Address {
+export interface AddressModel {
   address_guid: string | Uint8Array;
   street: string;
   number: string;

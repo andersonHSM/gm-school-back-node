@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { HttpException } from '../exceptions';
 
 class AuthMiddleware {
-  constructor(private jwtService: JwtService) {}
+  constructor(private readonly jwtService: JwtService) {}
 
   validate = (req: Request, res: Response, next: NextFunction) => {
     const token = req.headers.authorization?.split(' ')[1];

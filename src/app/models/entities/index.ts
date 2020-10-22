@@ -1,4 +1,4 @@
 export { UserModel } from './user-model';
-export { PersonalData } from './personal-data-model';
-export { Role } from './role-model';
-export { Address } from './address-model';
+export { PersonalDataModel } from './personal-data-model';
+export { RoleModel } from './role-model';
+export { AddressModel } from './address-model';

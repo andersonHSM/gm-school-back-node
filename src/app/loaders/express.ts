@@ -1,7 +1,7 @@
-import express, { Handler, json, Request, Response } from 'express';
+import express, { json, Request, Response } from 'express';
 import cors from 'cors';
 
-import { authRoutes, userRoutes } from '@routes/index';
+import { addressRoutes, authRoutes, userRoutes } from '@routes/index';
 import { JwtService } from '@services/index';
 import { EnviromentConfig } from '@config/index';
 import { AuthMiddleware } from '@middlewares/index';
@@ -21,9 +21,11 @@ export default async (app: express.Application) => {
 
   app.use('/auth', authRoutes(router));
 
-  app.use(authMiddleware as Handler);
+  app.use(authMiddleware);
 
   app.use('/users', userRoutes(router));
+
+  app.use('/addresses', addressRoutes(router));
 
   return app;
 };

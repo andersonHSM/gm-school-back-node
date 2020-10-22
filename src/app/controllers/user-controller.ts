@@ -6,7 +6,7 @@ import { UserService } from '@services/index';
 import { Response, Request } from 'express';
 
 class UserController implements BaseController {
-  constructor(private userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   index = async (req: Request & AuthenticatedRequest, res: Response) => {
     const { user_guid } = req;
@@ -40,7 +40,7 @@ class UserController implements BaseController {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
-      console.log({ error });
+
       return res.status(500).json('Unkown error');
     }
   };
@@ -64,8 +64,7 @@ class UserController implements BaseController {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
-      console.log({ error });
-      return res.status(500).json('Unkown error');
+      return res.status(500).json(error);
     }
   };
 

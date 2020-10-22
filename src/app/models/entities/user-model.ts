@@ -1,5 +1,5 @@
 interface UserModel {
-  user_guid: Uint8Array | string;
+  user_guid: ArrayLike<number> | string;
   first_name: string;
   middle_names?: string;
   last_name: string;

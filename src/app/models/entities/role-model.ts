@@ -1,4 +1,4 @@
 export interface RoleModel {
-  role_guid: string | Uint8Array;
+  role_guid: string | ArrayLike<number>;
   description: string;
 }

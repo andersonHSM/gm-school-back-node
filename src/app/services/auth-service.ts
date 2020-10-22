@@ -1,17 +1,21 @@
 import { LoginRequest, PersonalDataRequest, SignUpRequest } from '@models/requests/auth';
 import { JwtService } from '@services/index';
-import Knex from 'knex';
+
 import bcrypt from 'bcrypt';
 import { EnvConfig } from '@models/index';
-import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
 import { HttpException } from '@exceptions/index';
 import { AddressModel, UserModel, PersonalDataModel } from '@models/entities';
+import { Address, PersonalData, Role, User } from '@database/accessors';
 
 class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private knex: Knex,
-    private environmentConfig: EnvConfig
+    // private knex: Knex,
+    private readonly environmentConfig: EnvConfig,
+    private readonly user: User,
+    private readonly personalData: PersonalData,
+    private readonly address: Address,
+    private readonly role: Role
   ) {}
 
   private readonly userQueryReturningStatement = [
@@ -46,7 +50,6 @@ class AuthService {
     const { role, address: addressPayload, ...remainingSignupRequest } = signUpRequest;
 
     let address: AddressModel | null = null;
-    let address_guid: string;
 
     const user = await this.insertUserInTable(
       remainingSignupRequest,
@@ -56,31 +59,22 @@ class AuthService {
     const { user_guid } = user;
 
     if (addressPayload) {
-      address_guid = uuidv4();
-
       try {
-        const [addressQueryReturn]: AddressModel[] = await this.knex('address')
-          .insert({
-            ...addressPayload,
-            address_guid: uuidParse(address_guid),
-          })
-          .returning([
-            'street',
-            'number',
-            'district',
-            'zip_code',
-            'complement',
-            'city',
-            'state',
-            'country',
-          ]);
+        const {
+          address_guid,
+          ...addressQueryReturn
+        }: AddressModel = await this.address.insertAddress(
+          ['street', 'number', 'district', 'zip_code', 'complement', 'city', 'state', 'country'],
+          addressPayload as AddressModel
+        );
 
-        await this.knex('user')
-          .where({ user_guid })
-          .update({ address_guid: uuidParse(address_guid) });
+        await this.user.updateUser(user_guid, ['*'], {
+          address_guid,
+        });
 
-        address = { ...addressQueryReturn };
+        address = { address_guid, ...addressQueryReturn };
       } catch (error) {
+        console.log({ error });
         throw new HttpException('Invalid address payload', 710, 400);
       }
     }
@@ -92,7 +86,7 @@ class AuthService {
     }
 
     const personal_data = await this.insertPersonalData(
-      user_guid as Uint8Array,
+      user_guid as ArrayLike<number>,
       signUpRequest.personal_data
     );
 
@@ -131,12 +125,12 @@ class AuthService {
     }
 
     try {
-      const user: UserModel & { password_hash: string } & PersonalDataModel = await this.knex(
-        'user'
-      )
-        .select([...userReturningStatement, 'password_hash'])
-        .where({ email })
-        .first();
+      const user: UserModel & {
+        password_hash: string;
+      } & PersonalDataModel = await this.user.getUserByEmail(email, [
+        ...userReturningStatement,
+        'password_hash',
+      ]);
 
       if (!user && isLogin) {
         throw new HttpException('User not found', 704, 404);
@@ -154,16 +148,19 @@ class AuthService {
 
       const { user_guid } = user;
 
-      const personal_data: PersonalDataModel = await this.knex('personal_data')
-        .where({
-          user_guid,
-        })
-        .select(personalDataReturningStatement)
-        .first();
+      const personal_data: PersonalDataModel = await this.personalData.getPersonalDataByUserGuid(
+        user_guid,
+        personalDataReturningStatement
+      );
 
+      console.log({ user });
       const { password_hash, ...userReturn } = user;
 
-      return { ...userReturn, user_guid: uuidStringfy(user_guid as Uint8Array), personal_data };
+      return {
+        ...userReturn,
+        user_guid,
+        personal_data,
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -175,64 +172,42 @@ class AuthService {
     userData: Omit<SignUpRequest, 'role'>,
     returningStatement: string[]
   ): Promise<UserModel> => {
-    const { password, personal_data, ...signUp } = userData;
+    const { password, personal_data, address, ...signUp } = userData;
 
     const password_hash = await bcrypt.hash(
       password,
       parseInt(this.environmentConfig.passwordHashRounds)
     );
 
-    const user_guid = uuidv4();
+    const finalSignupRequest = { ...signUp, password_hash };
 
-    const finalSignupRequest = { ...signUp, password_hash, user_guid: uuidParse(user_guid) };
-
-    let queryReturn: any;
-    try {
-      queryReturn = await this.knex('user')
-        .insert(finalSignupRequest)
-        .returning(returningStatement);
-    } catch (error) {
-      throw new Error(error);
-    }
-
-    return { ...queryReturn[0], user_guid };
+    return await this.user.insertUser(returningStatement, finalSignupRequest);
   };
 
   private insertPersonalData = async (
-    user_guid: string | Uint8Array,
+    user_guid: string | ArrayLike<number>,
     personal_data: PersonalDataRequest
-  ): Promise<PersonalDataModel> => {
+  ): Promise<Omit<PersonalDataModel, 'personal_data_guid'>> => {
     const queryReturningStatement = ['cpf', 'rg', 'uf_rg', 'rg_emitter'];
-    const personal_data_guid = uuidParse(uuidv4());
 
-    const payload = {
-      personal_data_guid,
-      ...personal_data,
-      user_guid: uuidParse(user_guid as string),
-    };
+    const { personal_data_guid, ...personalData } = await this.personalData.insertPersonalData(
+      user_guid,
+      queryReturningStatement,
+      personal_data
+    );
 
-    const [queryReturn] = await this.knex('personal_data')
-      .insert(payload)
-      .returning(queryReturningStatement);
-
-    return queryReturn;
+    return personalData;
   };
 
   private setUserRole = async (user_guid: string, role_description: string) => {
-    const role = await this.knex('role')
-      .select(['role_guid', 'description'])
-      .where({ description: role_description })
-      .first();
+    const role = await this.role.getRoleByDescription(role_description, [
+      'role_guid',
+      'description',
+    ]);
 
     const { role_guid } = role;
 
-    const user_role_guid = uuidv4();
-
-    await this.knex('user_role').insert({
-      user_role_guid: uuidParse(user_role_guid),
-      user_guid: uuidParse(user_guid),
-      role_guid,
-    });
+    await this.role.setRoleForUser(role_guid, user_guid);
   };
 }
 

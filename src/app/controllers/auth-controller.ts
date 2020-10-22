@@ -18,6 +18,8 @@ export class AuthController implements BaseController {
         return res.status(error.statusCode).json(error.format());
       }
 
+      console.log({ error });
+
       return res.status(500).json(error);
     }
   };
@@ -39,6 +41,8 @@ export class AuthController implements BaseController {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
+
+      console.log({ error });
     }
   };
 

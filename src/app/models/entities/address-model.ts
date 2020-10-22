@@ -1,5 +1,5 @@
 export interface AddressModel {
-  address_guid: string | Uint8Array;
+  address_guid: string | ArrayLike<number>;
   street: string;
   number: string;
   district: string;

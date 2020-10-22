@@ -21,7 +21,7 @@ class UserService {
   ];
 
   getAllUsers = async (user_guid: string) => {
-    const role = await this.role.getRoleByUser(user_guid);
+    const role = await this.role.getRoleByUserGuid(user_guid);
 
     switch (role.description) {
       case RolesEnum.administrator:
@@ -60,7 +60,7 @@ class UserService {
 
     const { address_guid, ...userReturn } = user;
 
-    let address: AddressModel | null;
+    let address: AddressModel | undefined;
 
     if (addressPayload && !address_guid) {
       throw new HttpException('User must have a valid address to be updated', 709, 404);
@@ -68,30 +68,43 @@ class UserService {
 
     address =
       address_guid && addressPayload
-        ? await this.address.updateAddress(address_guid as Uint8Array, addressPayload)
-        : null;
+        ? await this.address.updateAddress(
+            address_guid as ArrayLike<number>,
+            Object.keys(addressPayload),
+            addressPayload
+          )
+        : undefined;
 
-    const { personal_data_guid, ...personal_data } = await this.personalData.updatePersonalData(
-      userToUpdateGuid,
-      ['cpf', 'rg', 'uf_rg', 'rg_emitter', 'personal_data_guid'],
-      personalDataPayload
-    );
+    let personal_data;
+
+    if (personalDataPayload) {
+      const {
+        personal_data_guid,
+        ...personalDataQuery
+      } = await this.personalData.updatePersonalData(
+        userToUpdateGuid,
+        Object.keys(personalDataPayload),
+        personalDataPayload
+      );
+
+      personal_data = personalDataQuery;
+    }
 
     return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
   };
 
   private validateUsersRoles = async (requestUserGuid: string, targetUserGuid: string) => {
     const [requestUser, userToDelete] = await Promise.all([
-      this.user.getUser(requestUserGuid, this.userQueryReturningStatement),
-      this.user.getUser(targetUserGuid, this.userQueryReturningStatement),
+      this.user.getUserByGuid(requestUserGuid, this.userQueryReturningStatement),
+      this.user.getUserByGuid(targetUserGuid, this.userQueryReturningStatement),
     ]);
 
     if (!requestUser || !userToDelete) {
       throw new HttpException('User not found', 704, 404);
     }
 
-    const requestUserRole = await this.role.getRoleByUser(requestUserGuid);
-    const userToDeleteRole = await this.role.getRoleByUser(targetUserGuid);
+    const requestUserRole = await this.role.getRoleByUserGuid(requestUserGuid);
+    const userToDeleteRole = await this.role.getRoleByUserGuid(targetUserGuid);
 
     if (
       requestUserGuid !== targetUserGuid &&

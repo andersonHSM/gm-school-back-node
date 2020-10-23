@@ -7,6 +7,24 @@ import { stringify as uuidStringify, parse as uuidParse, v4 as uuidv4 } from 'uu
 class Address {
   constructor(private readonly knex: Knex) {}
 
+  getAddress = async (
+    address_guid: string | ArrayLike<number>,
+    returningFields: string[]
+  ): Promise<AddressModel | undefined> => {
+    const toQueryAddressGuid = this.verifyUuid(address_guid);
+
+    const {
+      address_guid: queryReturnAddressGuid,
+      ...remainingAddress
+    }: AddressModel = await this.knex('address')
+      .select([...returningFields, 'address_guid'])
+      .where({ address_guid: toQueryAddressGuid })
+      .whereNull('deleted_at')
+      .first();
+
+    return { address_guid, ...remainingAddress };
+  };
+
   getAllActiveAddresses = async (returningFields: string[]) => {
     let addresses: AddressModel[] = await this.knex('address')
       .select([...returningFields, 'address_guid'])
@@ -59,12 +77,15 @@ class Address {
   };
 
   deleteAddress = async (address_guid: string | ArrayLike<number>) => {
-    const toQueryAddressGuid =
-      typeof address_guid === 'string' ? uuidParse(address_guid) : address_guid;
+    const toQueryAddressGuid = this.verifyUuid(address_guid);
 
     await this.knex('address')
       .where({ address_guid: toQueryAddressGuid })
       .update('deleted_at', this.knex.fn.now());
+  };
+
+  private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
+    return typeof guid === 'string' ? uuidParse(guid) : guid;
   };
 }
 

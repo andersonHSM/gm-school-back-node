@@ -18,6 +18,18 @@ class AddressService {
     'country',
   ];
 
+  getAddress = async (address_guid: string) => {
+    try {
+      return await this.address.getAddress(address_guid, this.addressQueryReturning);
+    } catch (error) {
+      switch (error.message) {
+        case "Cannot read property 'address_guid' of undefined":
+        default:
+          throw new HttpException('Address not found', 801, 404);
+      }
+    }
+  };
+
   getAllAddresses = async (): Promise<AddressModel[]> => {
     return await this.address.getAllActiveAddresses(this.addressQueryReturning);
   };

@@ -9,12 +9,14 @@ const router = Router();
 
 const addressService = new AddressService(new Address(KnexInstance));
 
-const { index, store, update } = new AddressController(addressService);
+const { index, store, update, delete: controllerDeleteFn } = new AddressController(addressService);
 
 router.get('/', (index as unknown) as Handler);
 
 router.post('/', (store as unknown) as Handler);
 
 router.patch('/:address_guid', (update as unknown) as Handler);
+
+router.delete('/:address_guid', (controllerDeleteFn as unknown) as Handler);
 
 export default router;

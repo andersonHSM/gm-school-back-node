@@ -65,18 +65,24 @@ class AddressService {
       }
     }
 
-    return await this.address.updateAddress(address_guid, this.addressQueryReturning, payload);
+    try {
+      return await this.address.updateAddress(address_guid, this.addressQueryReturning, payload);
+    } catch (error) {
+      switch (error.message) {
+        case "Cannot read property 'address_guid' of undefined":
+        default:
+          throw new HttpException('Address not found', 801, 404);
+      }
+    }
+  };
+
+  deleteAddress = async (address_guid: string) => {
+    try {
+      await this.address.deleteAddress(address_guid);
+    } catch (error) {
+      throw new HttpException(error.message, 600, 400);
+    }
   };
 }
 
 export { AddressService };
-
-/* 
-"street": "Travessa Santa Isabel",
-    "number": "667",
-    "district": "Centro",
-    "zip_code": "49900000",
-    "complement": "",
-    "city": "Propriá",
-    "state": "SE",
-    "country": "Brasil", */

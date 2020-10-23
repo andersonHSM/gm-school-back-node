@@ -1,3 +1,4 @@
+import { HttpException } from '@exceptions/index';
 import { AddressModel } from '@models/entities';
 import { AddressInsertPayload, AddressUpdatePayload } from '@models/requests/address';
 import Knex from 'knex';
@@ -47,13 +48,24 @@ class Address {
       .where({
         address_guid: typeof address_guid === 'string' ? uuidParse(address_guid) : address_guid,
       })
+      .whereNotNull('deleted_at')
       .update(payload)
       .returning([...returningFields, 'address_guid']);
 
-    return { ...address, address_guid: uuidStringify(entityAddressGuid as ArrayLike<number>) };
+    return {
+      ...address,
+      address_guid: uuidStringify(entityAddressGuid as ArrayLike<number>),
+    };
   };
 
-  deleteAddress = async (address_guid: string | ArrayLike<number>) => {};
+  deleteAddress = async (address_guid: string | ArrayLike<number>) => {
+    const toQueryAddressGuid =
+      typeof address_guid === 'string' ? uuidParse(address_guid) : address_guid;
+
+    await this.knex('address')
+      .where({ address_guid: toQueryAddressGuid })
+      .update('deleted_at', this.knex.fn.now());
+  };
 }
 
 export { Address };

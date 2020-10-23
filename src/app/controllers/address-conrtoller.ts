@@ -39,9 +39,24 @@ class AddressController implements BaseController {
     }
   };
 
-  delete() {
-    throw new Error('Method not implemented.');
-  }
+  delete = async (req: Request<{ address_guid: string }> & AuthenticatedRequest, res: Response) => {
+    const { address_guid } = req.params;
+    try {
+      await this.addressService.deleteAddress(address_guid);
+
+      console.log('oi');
+
+      return res.status(200).json();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      console.log(error);
+
+      return res.status(500).json('Unkown error');
+    }
+  };
 
   update = async (
     req: Request<{ address_guid: string }, null, AddressUpdatePayload> & AuthenticatedRequest,

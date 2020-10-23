@@ -4,21 +4,21 @@ import { Address, PersonalData, Role, User } from '@database/accessors';
 import { UserService } from '@services/index';
 import { Handler, Router } from 'express';
 
-export const userRoutes = (router: Router): Router => {
-  const userService = new UserService(
-    new User(KnexInstance),
-    new Address(KnexInstance),
-    new PersonalData(KnexInstance),
-    new Role(KnexInstance)
-  );
+const router = Router();
 
-  const { index, delete: deleteController, update } = new UserController(userService);
+const userService = new UserService(
+  new User(KnexInstance),
+  new Address(KnexInstance),
+  new PersonalData(KnexInstance),
+  new Role(KnexInstance)
+);
 
-  router.get('/', (index as unknown) as Handler);
+const { index, delete: deleteController, update } = new UserController(userService);
 
-  router.delete('/:user_guid', (deleteController as unknown) as Handler);
+router.get('/', (index as unknown) as Handler);
 
-  router.patch('/:user_guid', (update as unknown) as Handler);
+router.delete('/:user_guid', (deleteController as unknown) as Handler);
 
-  return router;
-};
+router.patch('/:user_guid', (update as unknown) as Handler);
+
+export default router;

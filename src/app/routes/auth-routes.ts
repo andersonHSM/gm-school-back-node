@@ -5,25 +5,25 @@ import { AuthService, JwtService } from '@services/index';
 import { EnviromentConfig, KnexInstance } from '@config/index';
 import { Address, PersonalData, Role, User } from '@database/accessors';
 
-export const authRoutes = (router: Router): Router => {
-  const jwtService = new JwtService(EnviromentConfig);
+const router = Router();
 
-  const authService = new AuthService(
-    jwtService,
-    EnviromentConfig,
-    new User(KnexInstance),
-    new PersonalData(KnexInstance),
-    new Address(KnexInstance),
-    new Role(KnexInstance)
-  );
+const jwtService = new JwtService(EnviromentConfig);
 
-  const authController = new AuthController(authService);
+const authService = new AuthService(
+  jwtService,
+  EnviromentConfig,
+  new User(KnexInstance),
+  new PersonalData(KnexInstance),
+  new Address(KnexInstance),
+  new Role(KnexInstance)
+);
 
-  const { show, store } = authController;
+const authController = new AuthController(authService);
 
-  router.post('/login', show);
+const { show, store } = authController;
 
-  router.post('/signup', store);
+router.post('/login', show);
 
-  return router;
-};
+router.post('/signup', store);
+
+export default router;

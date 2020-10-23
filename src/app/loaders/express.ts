@@ -7,8 +7,6 @@ import { EnviromentConfig } from '@config/index';
 import { AuthMiddleware } from '@middlewares/index';
 
 export default async (app: express.Application) => {
-  const router = express.Router();
-
   const jwtService = new JwtService(EnviromentConfig);
   const { validate: authMiddleware } = new AuthMiddleware(jwtService);
 
@@ -19,13 +17,13 @@ export default async (app: express.Application) => {
     res.status(200).json({ message: 'Hello World!' });
   });
 
-  app.use('/auth', authRoutes(router));
+  app.use('/auth/', authRoutes);
 
   app.use(authMiddleware);
 
-  app.use('/users', userRoutes(router));
+  app.use('/users/', userRoutes);
 
-  app.use('/addresses', addressRoutes(router));
+  app.use('/addresses/', addressRoutes);
 
   return app;
 };

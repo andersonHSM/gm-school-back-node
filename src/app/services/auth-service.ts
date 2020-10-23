@@ -74,7 +74,6 @@ class AuthService {
 
         address = { address_guid, ...addressQueryReturn };
       } catch (error) {
-        console.log({ error });
         throw new HttpException('Invalid address payload', 710, 400);
       }
     }
@@ -153,7 +152,6 @@ class AuthService {
         personalDataReturningStatement
       );
 
-      console.log({ user });
       const { password_hash, ...userReturn } = user;
 
       return {

@@ -3,15 +3,16 @@ import { AddressService } from '@services/index';
 
 import { KnexInstance } from '@config/index';
 import { AddressController } from '@controllers/address-conrtoller';
+import { Address } from '@database/accessors';
 
-export const addressRoutes = (router: Router): Router => {
-  const addressService = new AddressService(KnexInstance);
+const router = Router();
 
-  const { index, store } = new AddressController(addressService);
+const addressService = new AddressService(new Address(KnexInstance));
 
-  router.get('/', (index as unknown) as Handler);
+const { index, store } = new AddressController(addressService);
 
-  router.post('/signup', store);
+router.get('/', (index as unknown) as Handler);
 
-  return router;
-};
+router.post('/', (store as unknown) as Handler);
+
+export default router;

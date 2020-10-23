@@ -1,10 +1,23 @@
 import { AddressModel } from '@models/entities';
-import { UserPatchRequestPayload } from '@models/requests/user';
 import Knex from 'knex';
 import { stringify as uuidStringify, parse as uuidParse, v4 as uuidv4 } from 'uuid';
 
 class Address {
   constructor(private readonly knex: Knex) {}
+
+  getAllActiveAddresses = async (returningFields: string[]) => {
+    let addresses: AddressModel[] = await this.knex('address')
+      .select([...returningFields, 'address_guid'])
+      .whereNull('deleted_at');
+
+    addresses = addresses.map(address => {
+      const { address_guid, ...remaininAddress } = address;
+
+      return { ...remaininAddress, address_guid: uuidStringify(address_guid as ArrayLike<number>) };
+    });
+
+    return addresses;
+  };
 
   insertAddress = async (
     returningFields: string[],
@@ -17,9 +30,9 @@ class Address {
         ...payload,
         address_guid: uuidParse(address_guid),
       })
-      .returning(returningFields);
+      .returning([...returningFields, 'address_guid']);
 
-    return { ...address, address_guid };
+    return { address_guid, ...address };
   };
 
   updateAddress = async (

@@ -1,3 +1,5 @@
-export { authRoutes } from './auth-routes';
-export { userRoutes } from './user-routes';
-export { addressRoutes } from './address-routes';
+import authRoutes from './auth-routes';
+import userRoutes from './user-routes';
+import addressRoutes from './address-routes';
+
+export { authRoutes, userRoutes, addressRoutes };

@@ -27,12 +27,11 @@ class AddressService {
       number: Joi.string().required(),
       district: Joi.string().required().max(45),
       zip_code: Joi.string().required().length(8),
-      complement: Joi.string().max(25),
+      complement: Joi.string().max(25).allow(null, ''),
       city: Joi.string().required().max(45),
       state: Joi.string().required().max(45),
       country: Joi.string().required().max(45),
     });
-    console.log('oi');
 
     try {
       await schema.validateAsync(payload);

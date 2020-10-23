@@ -1,4 +1,5 @@
 import { AddressModel } from '@models/entities';
+import { AddressInsertPayload, AddressUpdatePayload } from '@models/requests/address';
 import Knex from 'knex';
 import { stringify as uuidStringify, parse as uuidParse, v4 as uuidv4 } from 'uuid';
 
@@ -21,7 +22,7 @@ class Address {
 
   insertAddress = async (
     returningFields: string[],
-    payload: Omit<AddressModel, 'address_guid'>
+    payload: AddressInsertPayload
   ): Promise<AddressModel> => {
     const address_guid = uuidv4();
 
@@ -36,19 +37,23 @@ class Address {
   };
 
   updateAddress = async (
-    address_guid: ArrayLike<number>,
+    address_guid: string | ArrayLike<number>,
     returningFields: string[],
-    payload: Omit<AddressModel, 'address_guid'>
+    payload: AddressUpdatePayload
   ): Promise<AddressModel> => {
     const [{ address_guid: entityAddressGuid, ...address }]: AddressModel[] = await this.knex(
       'address'
     )
-      .where({ address_guid })
+      .where({
+        address_guid: typeof address_guid === 'string' ? uuidParse(address_guid) : address_guid,
+      })
       .update(payload)
       .returning([...returningFields, 'address_guid']);
 
     return { ...address, address_guid: uuidStringify(entityAddressGuid as ArrayLike<number>) };
   };
+
+  deleteAddress = async (address_guid: string | ArrayLike<number>) => {};
 }
 
 export { Address };

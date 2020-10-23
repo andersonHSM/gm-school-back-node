@@ -1,6 +1,7 @@
 import { Address } from '@database/accessors';
 import { HttpException } from '@exceptions/http-exception';
 import { AddressModel } from '@models/entities';
+import { AddressUpdatePayload } from '@models/requests/address';
 import Joi from 'joi';
 
 class AddressService {
@@ -36,11 +37,35 @@ class AddressService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      console.log(error);
-      throw new HttpException('test', 712, 400);
+      if (error instanceof Joi.ValidationError) {
+        throw new HttpException('Verify the fields', 712, 400);
+      }
     }
 
     return await this.address.insertAddress(this.addressQueryReturning, payload);
+  };
+
+  updateExistingAddress = async (address_guid: string, payload: AddressUpdatePayload) => {
+    const schema = Joi.object({
+      street: Joi.string().max(65),
+      number: Joi.string(),
+      district: Joi.string().max(45),
+      zip_code: Joi.string().length(8),
+      complement: Joi.string().max(25).allow(null, ''),
+      city: Joi.string().max(45),
+      state: Joi.string().max(45),
+      country: Joi.string().max(45),
+    });
+
+    try {
+      await schema.validateAsync(payload);
+    } catch (error) {
+      if (error instanceof Joi.ValidationError) {
+        throw new HttpException('Verify the fields', 712, 400);
+      }
+    }
+
+    return await this.address.updateAddress(address_guid, this.addressQueryReturning, payload);
   };
 }
 

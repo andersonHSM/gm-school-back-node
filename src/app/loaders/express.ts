@@ -3,12 +3,14 @@ import cors from 'cors';
 
 import { addressRoutes, authRoutes, userRoutes } from '@routes/index';
 import { JwtService } from '@services/index';
-import { EnviromentConfig } from '@config/index';
-import { AuthMiddleware } from '@middlewares/index';
+import { EnviromentConfig, KnexInstance } from '@config/index';
+import { AuthMiddleware, RoleMiddlewares } from '@middlewares/index';
+import { Role } from '@database/accessors';
 
 export default async (app: express.Application) => {
   const jwtService = new JwtService(EnviromentConfig);
   const { validate: authMiddleware } = new AuthMiddleware(jwtService);
+  const roleMiddlewares = new RoleMiddlewares(new Role(KnexInstance));
 
   app.use(cors());
   app.use(json());
@@ -21,9 +23,9 @@ export default async (app: express.Application) => {
 
   app.use(authMiddleware);
 
-  app.use('/users/', userRoutes);
+  app.use('/users/', userRoutes(roleMiddlewares));
 
-  app.use('/addresses/', addressRoutes);
+  app.use('/addresses/', addressRoutes(roleMiddlewares));
 
   return app;
 };

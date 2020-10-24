@@ -2,7 +2,7 @@ import { JwtService } from '@services/index';
 import { NextFunction, Request, Response } from 'express';
 import { HttpException } from '../exceptions';
 
-class AuthMiddleware {
+export class AuthMiddleware {
   constructor(private readonly jwtService: JwtService) {}
 
   validate = (req: Request, res: Response, next: NextFunction) => {
@@ -25,5 +25,3 @@ class AuthMiddleware {
     }
   };
 }
-
-export { AuthMiddleware };

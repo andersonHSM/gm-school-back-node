@@ -10,7 +10,7 @@ class User {
 
   getUserByGuid = async (user_guid: string, fieldsToReturn: string[]): Promise<UserModel> => {
     const user: UserModel = await this.knex('user')
-      .select(fieldsToReturn)
+      .select([...fieldsToReturn, 'user_guid'])
       .where({ user_guid: uuidParse(user_guid) })
       .whereNull('deleted_at')
       .first();

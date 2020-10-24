@@ -3,24 +3,31 @@ import { AddressService } from '@services/index';
 
 import { KnexInstance } from '@config/index';
 import { AddressController } from '@controllers/address-conrtoller';
-import { Address } from '@database/accessors';
+import { Address, Role } from '@database/accessors';
+import { RoleMiddlewares } from '@middlewares/index';
 
-const router = Router();
+export const addressRoutes = (roleMiddlewares: RoleMiddlewares) => {
+  const router = Router();
 
-const addressService = new AddressService(new Address(KnexInstance));
+  const { isAdmin } = roleMiddlewares;
 
-const { index, store, update, delete: controllerDeleteFn, show } = new AddressController(
-  addressService
-);
+  const addressService = new AddressService(new Address(KnexInstance));
 
-router.get('/', (index as unknown) as Handler);
+  const { index, store, update, delete: controllerDeleteFn, show } = new AddressController(
+    addressService
+  );
 
-router.post('/', (store as unknown) as Handler);
+  router.get('/', (isAdmin as unknown) as Handler, (index as unknown) as Handler);
 
-router.get('/:address_guid', (show as unknown) as Handler);
+  router.post('/', (store as unknown) as Handler);
 
-router.patch('/:address_guid', (update as unknown) as Handler);
+  router.get('/:address_guid', (show as unknown) as Handler);
 
-router.delete('/:address_guid', (controllerDeleteFn as unknown) as Handler);
+  router.patch('/:address_guid', (update as unknown) as Handler);
 
-export default router;
+  router.delete('/:address_guid', (controllerDeleteFn as unknown) as Handler);
+
+  return router;
+};
+
+// export default router;

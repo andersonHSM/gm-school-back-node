@@ -1,6 +1,4 @@
-import { Address } from '@database/accessors';
 import { HttpException } from '@exceptions/index';
-import { AddressModel } from '@models/entities';
 import { BaseController } from '@models/index';
 import { AddressInsertPayload, AddressUpdatePayload } from '@models/requests/address';
 import { AuthenticatedRequest } from '@models/requests/auth';

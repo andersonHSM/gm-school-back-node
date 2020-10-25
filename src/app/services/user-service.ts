@@ -20,21 +20,10 @@ class UserService {
     'user.last_name',
   ];
 
-  getAllUsers = async (user_guid: string) => {
-    const role = await this.role.getRoleByUserGuid(user_guid);
+  getAllUsers = async () => {
+    let users: UserModel[] = await this.user.getAllUsers(this.userQueryReturningStatement);
 
-    switch (role.description) {
-      case RolesEnum.administrator:
-        let users: UserModel[] = await this.user.getAllUsers(this.userQueryReturningStatement);
-
-        return users;
-
-      case RolesEnum.coordinator:
-      case RolesEnum.professor:
-      case RolesEnum.student:
-      default:
-        throw new HttpException('Insufficient permission', 707, 422);
-    }
+    return users;
   };
 
   deleteUser = async (requestUserGuid: string, userToDeleteGuid: string) => {
@@ -48,49 +37,61 @@ class UserService {
     userToUpdateGuid: string,
     payload: UserPatchRequestPayload
   ) => {
-    await this.validateUsersRoles(requestUserGuid, userToUpdateGuid);
+    try {
+      await this.validateUsersRoles(requestUserGuid, userToUpdateGuid);
 
-    const { personal_data: personalDataPayload, address: addressPayload, ...userPayload } = payload;
-
-    const user: UserModel & Pick<AddressModel, 'address_guid'> = await this.user.updateUser(
-      userToUpdateGuid,
-      [...this.userQueryReturningStatement, 'address_guid'],
-      userPayload
-    );
-
-    const { address_guid, ...userReturn } = user;
-
-    let address: AddressModel | undefined;
-
-    if (addressPayload && !address_guid) {
-      throw new HttpException('User must have a valid address to be updated', 709, 404);
-    }
-
-    address =
-      address_guid && addressPayload
-        ? await this.address.updateAddress(
-            address_guid as ArrayLike<number>,
-            Object.keys(addressPayload),
-            addressPayload
-          )
-        : undefined;
-
-    let personal_data;
-
-    if (personalDataPayload) {
       const {
-        personal_data_guid,
-        ...personalDataQuery
-      } = await this.personalData.updatePersonalData(
+        personal_data: personalDataPayload,
+        address: addressPayload,
+        ...userPayload
+      } = payload;
+      const user: UserModel & Pick<AddressModel, 'address_guid'> = await this.user.updateUser(
         userToUpdateGuid,
-        Object.keys(personalDataPayload),
-        personalDataPayload
+        [...this.userQueryReturningStatement, 'address_guid'],
+        userPayload
       );
 
-      personal_data = personalDataQuery;
-    }
+      const { address_guid, ...userReturn } = user;
 
-    return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
+      let address: AddressModel | undefined;
+
+      if (addressPayload && !address_guid) {
+        throw new HttpException('User must have a valid address to be updated', 709, 404);
+      }
+
+      address =
+        address_guid && addressPayload
+          ? await this.address.updateAddress(
+              address_guid as ArrayLike<number>,
+              Object.keys(addressPayload),
+              addressPayload
+            )
+          : undefined;
+
+      let personal_data;
+
+      if (personalDataPayload) {
+        const {
+          personal_data_guid,
+          ...personalDataQuery
+        } = await this.personalData.updatePersonalData(
+          userToUpdateGuid,
+          Object.keys(personalDataPayload),
+          personalDataPayload
+        );
+
+        personal_data = personalDataQuery;
+      }
+
+      return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
+    } catch (error) {
+      console.log(error);
+      switch (error.message) {
+        case "Cannot read property 'user_guid' of undefined":
+        default:
+          throw new HttpException(`User  not found`, 704, 404);
+      }
+    }
   };
 
   private validateUsersRoles = async (requestUserGuid: string, targetUserGuid: string) => {

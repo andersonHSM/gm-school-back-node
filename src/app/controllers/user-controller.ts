@@ -12,7 +12,7 @@ class UserController implements BaseController {
     const { user_guid } = req;
 
     try {
-      const users = await this.userService.getAllUsers(user_guid);
+      const users = await this.userService.getAllUsers();
 
       return res.status(200).json(users);
     } catch (error) {
@@ -61,6 +61,7 @@ class UserController implements BaseController {
 
       return res.status(200).json(returnObject);
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }

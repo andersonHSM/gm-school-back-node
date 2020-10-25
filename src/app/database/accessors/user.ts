@@ -1,4 +1,5 @@
-import { AddressModel, UserModel } from '@models/entities';
+import { HttpException } from '@exceptions/index';
+import { UserModel } from '@models/entities';
 import { SignUpRequest } from '@models/requests/auth';
 import { UserPatchRequestPayload } from '@models/requests/user';
 import Knex from 'knex';
@@ -29,7 +30,15 @@ class User {
   };
 
   getAllUsers = async (fieldsToReturn: string[]): Promise<UserModel[]> => {
-    let users = await this.knex('user').select(fieldsToReturn).whereNull('deleted_at');
+    let users = await this.knex('user')
+      .select([...fieldsToReturn, 'role.description as role'])
+      .whereNull('user.deleted_at')
+      .innerJoin('user_role', function () {
+        this.on('user_role.user_guid', '=', 'user.user_guid');
+      })
+      .innerJoin('role', function () {
+        this.on('user_role.role_guid', '=', 'role.role_guid');
+      });
 
     users = users.map(user => {
       const { user_guid } = user;
@@ -68,8 +77,15 @@ class User {
 
     const [user]: UserModel[] = await this.knex('user')
       .where({ user_guid: typeof user_guid === 'string' ? uuidParse(user_guid) : user_guid })
+      .where('user.deleted_at', null)
       .update(payload)
-      .returning(returningFields);
+      .returning([...returningFields, 'role.description as role'])
+      .innerJoin('user_role', function () {
+        this.on('user_role.user_guid', '=', 'user.user_guid');
+      })
+      .innerJoin('role', function () {
+        this.on('user_role.role_guid', '=', 'role.role_guid');
+      });
 
     return { ...user, user_guid: uuidStringify(user.user_guid as ArrayLike<number>) };
   };

@@ -8,9 +8,9 @@ import { parse as uuidParse, stringify as uuidStringify, v4 as uuidv4 } from 'uu
 class User {
   constructor(private readonly knex: Knex) {}
 
-  getUserByGuid = async (user_guid: string, fieldsToReturn: string[]): Promise<UserModel> => {
+  getUserByGuid = async (user_guid: string, returningFields: string[]): Promise<UserModel> => {
     const user: UserModel = await this.knex('user')
-      .select([...fieldsToReturn, 'user_guid'])
+      .select([...returningFields, 'user_guid'])
       .where({ user_guid: uuidParse(user_guid) })
       .whereNull('deleted_at')
       .first();
@@ -18,9 +18,9 @@ class User {
     return { ...user, user_guid: uuidStringify(user.user_guid as ArrayLike<number>) };
   };
 
-  getUserByEmail = async (email: string, fieldsToReturn: string[]): Promise<UserModel & any> => {
+  getUserByEmail = async (email: string, returningFields: string[]): Promise<UserModel & any> => {
     const { user_guid, ...user }: UserModel = await this.knex('user')
-      .select(fieldsToReturn)
+      .select(returningFields)
       .where({ email })
       .whereNull('deleted_at')
       .first();
@@ -28,8 +28,8 @@ class User {
     return { ...user, user_guid: uuidStringify(user_guid as ArrayLike<number>) };
   };
 
-  getAllUsers = async (fieldsToReturn: string[]): Promise<UserModel[]> => {
-    let users = await this.knex('user').select(fieldsToReturn).whereNull('deleted_at');
+  getAllUsers = async (returningFields: string[]): Promise<UserModel[]> => {
+    let users = await this.knex('user').select(returningFields).whereNull('deleted_at');
 
     users = users.map(user => {
       const { user_guid } = user;

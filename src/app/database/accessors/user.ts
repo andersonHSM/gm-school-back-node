@@ -8,9 +8,9 @@ import { parse as uuidParse, stringify as uuidStringify, v4 as uuidv4 } from 'uu
 class User {
   constructor(private readonly knex: Knex) {}
 
-  getUserByGuid = async (user_guid: string, fieldsToReturn: string[]): Promise<UserModel> => {
+  getUserByGuid = async (user_guid: string, returningFields: string[]): Promise<UserModel> => {
     const user: UserModel = await this.knex('user')
-      .select([...fieldsToReturn, 'user.user_guid', 'role.description as role'])
+      .select([...returningFields, 'user.user_guid', 'role.description as role'])
       .where({ [`user.user_guid`]: uuidParse(user_guid) })
       .whereNull('user.deleted_at')
       .innerJoin('user_role', function () {
@@ -24,9 +24,9 @@ class User {
     return { ...user, user_guid: uuidStringify(user.user_guid as ArrayLike<number>) };
   };
 
-  getUserByEmail = async (email: string, fieldsToReturn: string[]): Promise<UserModel & any> => {
+  getUserByEmail = async (email: string, returningFields: string[]): Promise<UserModel & any> => {
     const { user_guid, ...user }: UserModel = await this.knex('user')
-      .select(fieldsToReturn)
+      .select(returningFields)
       .where({ email })
       .whereNull('deleted_at')
       .first();

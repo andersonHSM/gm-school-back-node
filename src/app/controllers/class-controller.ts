@@ -1,7 +1,7 @@
 import { HttpException } from '@exceptions/index';
 import { BaseController } from '@models/index';
 import { AuthenticatedRequest } from '@models/requests/auth';
-import { ClassInsertPayload } from '@models/requests/class';
+import { ClassInsertPayload, ClassUpdatePayload } from '@models/requests/class';
 import { ClassService } from '@services/index';
 import { Request, Response } from 'express';
 
@@ -37,15 +37,57 @@ export class ClassController implements BaseController {
     }
   };
 
-  delete() {
-    throw new Error('Method not implemented.');
-  }
+  delete = async (req: Request<{ class_guid: string }>, res: Response) => {
+    const { class_guid } = req.params;
+    try {
+      const classReturn = await this.classService.deleteClass(class_guid);
 
-  update() {
-    throw new Error('Method not implemented.');
-  }
+      if (!classReturn) {
+        throw new HttpException('Class not found', 602, 404);
+      }
 
-  show() {
-    throw new Error('Method not implemented.');
-  }
+      return res.status(200).json();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  update = async (
+    req: Request<{ class_guid: string }, null, ClassUpdatePayload>,
+    res: Response
+  ) => {
+    const { class_guid } = req.params;
+    const payload = req.body;
+
+    try {
+      const classReturn = await this.classService.updateClass(class_guid, payload);
+
+      return res.status(200).json(classReturn);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  show = async (req: Request<{ class_guid: string }>, res: Response) => {
+    const { class_guid } = req.params;
+    try {
+      const classReturn = await this.classService.getClass(class_guid);
+
+      return res.status(200).json(classReturn);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
 }

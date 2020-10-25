@@ -11,9 +11,15 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   const { isAdmin } = roleMiddlewares;
   const classService = new ClassService(new Class(KnexInstance));
 
-  const { index, store } = new ClassController(classService);
+  const { index, store, show, delete: deleteFn, update } = new ClassController(classService);
 
   router.get('/', (isAdmin as unknown) as Handler, (index as unknown) as Handler);
+
+  router.get('/:class_guid', (show as unknown) as Handler);
+
+  router.patch('/:class_guid', (isAdmin as unknown) as Handler, (update as unknown) as Handler);
+
+  router.delete('/:class_guid', (isAdmin as unknown) as Handler, (deleteFn as unknown) as Handler);
 
   router.post('/', (isAdmin as unknown) as Handler, (store as unknown) as Handler);
 

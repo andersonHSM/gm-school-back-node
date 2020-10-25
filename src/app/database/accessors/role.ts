@@ -31,17 +31,21 @@ class Role {
     });
   };
 
-  getRoleByUserGuid = async (user_guid: string): Promise<RoleModel> => {
-    const binaryUserGuid = uuidParse(user_guid);
+  getRoleByUserGuid = async (user_guid: string) => {
+    try {
+      const binaryUserGuid = uuidParse(user_guid);
 
-    const user_role = await this.knex('user_role').where({ user_guid: binaryUserGuid }).first();
+      const user_role = await this.knex('user_role').where({ user_guid: binaryUserGuid }).first();
 
-    const role: RoleModel = await this.knex('role')
-      .where({ role_guid: user_role.role_guid })
-      .whereNull('deleted_at')
-      .first();
+      const role: RoleModel = await this.knex('role')
+        .where({ role_guid: user_role.role_guid })
+        .whereNull('deleted_at')
+        .first();
 
-    return { ...role, role_guid: uuidStringify(role.role_guid as ArrayLike<number>) };
+      return { ...role, role_guid: uuidStringify(role.role_guid as ArrayLike<number>) };
+    } catch (error) {
+      return null;
+    }
   };
 }
 

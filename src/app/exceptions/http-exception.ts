@@ -1,4 +1,4 @@
-class HttpException {
+export class HttpException {
   constructor(private errorMessage: string, private errorCode: number, public statusCode: number) {}
 
   format = () => {
@@ -8,5 +8,3 @@ class HttpException {
     };
   };
 }
-
-export { HttpException };

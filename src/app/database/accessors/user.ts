@@ -1,4 +1,3 @@
-import { HttpException } from '@exceptions/index';
 import { UserModel } from '@models/entities';
 import { SignUpRequest } from '@models/requests/auth';
 import { UserPatchRequestPayload } from '@models/requests/user';
@@ -11,9 +10,15 @@ class User {
 
   getUserByGuid = async (user_guid: string, fieldsToReturn: string[]): Promise<UserModel> => {
     const user: UserModel = await this.knex('user')
-      .select([...fieldsToReturn, 'user_guid'])
-      .where({ user_guid: uuidParse(user_guid) })
-      .whereNull('deleted_at')
+      .select([...fieldsToReturn, 'user.user_guid', 'role.description as role'])
+      .where({ [`user.user_guid`]: uuidParse(user_guid) })
+      .whereNull('user.deleted_at')
+      .innerJoin('user_role', function () {
+        this.on('user_role.user_guid', '=', 'user.user_guid');
+      })
+      .innerJoin('role', function () {
+        this.on('user_role.role_guid', '=', 'role.role_guid');
+      })
       .first();
 
     return { ...user, user_guid: uuidStringify(user.user_guid as ArrayLike<number>) };

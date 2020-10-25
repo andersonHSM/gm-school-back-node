@@ -1,15 +1,13 @@
 import { Address, PersonalData, Role, User } from '@database/accessors';
 import { HttpException } from '@exceptions/index';
 import { UserModel, AddressModel } from '@models/entities';
-import { RolesEnum } from '@models/enums';
 import { UserPatchRequestPayload } from '@models/requests/user';
 
 class UserService {
   constructor(
     private readonly user: User,
     private readonly address: Address,
-    private readonly personalData: PersonalData,
-    private readonly role: Role
+    private readonly personalData: PersonalData
   ) {}
 
   private readonly userQueryReturningStatement = [
@@ -20,26 +18,30 @@ class UserService {
     'user.last_name',
   ];
 
+  getUser = async (user_guid: string) => {
+    try {
+      return await this.user.getUserByGuid(user_guid, this.userQueryReturningStatement);
+    } catch (error) {
+      switch (error.message) {
+        case "Cannot read property 'user_guid' of undefined":
+        default:
+          throw new HttpException(`User not found`, 704, 404);
+      }
+    }
+  };
+
   getAllUsers = async () => {
     let users: UserModel[] = await this.user.getAllUsers(this.userQueryReturningStatement);
 
     return users;
   };
 
-  deleteUser = async (requestUserGuid: string, userToDeleteGuid: string) => {
-    await this.validateUsersRoles(requestUserGuid, userToDeleteGuid);
-
+  deleteUser = async (userToDeleteGuid: string) => {
     await this.user.deleteUser(userToDeleteGuid);
   };
 
-  updateUser = async (
-    requestUserGuid: string,
-    userToUpdateGuid: string,
-    payload: UserPatchRequestPayload
-  ) => {
+  updateUser = async (userToUpdateGuid: string, payload: UserPatchRequestPayload) => {
     try {
-      await this.validateUsersRoles(requestUserGuid, userToUpdateGuid);
-
       const {
         personal_data: personalDataPayload,
         address: addressPayload,
@@ -85,41 +87,11 @@ class UserService {
 
       return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
     } catch (error) {
-      console.log(error);
       switch (error.message) {
         case "Cannot read property 'user_guid' of undefined":
         default:
-          throw new HttpException(`User  not found`, 704, 404);
+          throw new HttpException(`User not found`, 704, 404);
       }
-    }
-  };
-
-  private validateUsersRoles = async (requestUserGuid: string, targetUserGuid: string) => {
-    const [requestUser, userToDelete] = await Promise.all([
-      this.user.getUserByGuid(requestUserGuid, this.userQueryReturningStatement),
-      this.user.getUserByGuid(targetUserGuid, this.userQueryReturningStatement),
-    ]);
-
-    if (!requestUser || !userToDelete) {
-      throw new HttpException('User not found', 704, 404);
-    }
-
-    const requestUserRole = await this.role.getRoleByUserGuid(requestUserGuid);
-    const userToDeleteRole = await this.role.getRoleByUserGuid(targetUserGuid);
-
-    if (
-      requestUserGuid !== targetUserGuid &&
-      requestUserRole.description !== RolesEnum.administrator
-    ) {
-      throw new HttpException('Insufficient permission', 707, 403);
-    }
-
-    if (
-      userToDeleteRole.description === RolesEnum.administrator &&
-      requestUserRole.description === RolesEnum.administrator &&
-      requestUserGuid !== targetUserGuid
-    ) {
-      throw new HttpException('An administrator can not change an equivalent account', 708, 403);
     }
   };
 }

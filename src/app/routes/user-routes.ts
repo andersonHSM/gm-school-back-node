@@ -7,22 +7,31 @@ import { Handler, Router } from 'express';
 
 export const userRoutes = (roleMiddlewares: RoleMiddlewares) => {
   const router = Router();
-  const { isAdmin } = roleMiddlewares;
+  const { isAdmin, isAdminOrSameUser } = roleMiddlewares;
 
   const userService = new UserService(
     new User(KnexInstance),
     new Address(KnexInstance),
-    new PersonalData(KnexInstance),
-    new Role(KnexInstance)
+    new PersonalData(KnexInstance)
   );
 
-  const { index, delete: deleteController, update } = new UserController(userService);
+  const { index, delete: deleteController, update, show } = new UserController(userService);
 
   router.get('/', (isAdmin as unknown) as Handler, (index as unknown) as Handler);
 
-  router.delete('/:user_guid', (deleteController as unknown) as Handler);
+  router.get('/:user_guid', (show as unknown) as Handler);
 
-  router.patch('/:user_guid', (update as unknown) as Handler);
+  router.delete(
+    '/:user_guid',
+    (isAdminOrSameUser as unknown) as Handler,
+    (deleteController as unknown) as Handler
+  );
+
+  router.patch(
+    '/:user_guid',
+    (isAdminOrSameUser as unknown) as Handler,
+    (update as unknown) as Handler
+  );
 
   return router;
 };

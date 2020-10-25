@@ -8,9 +8,7 @@ import { Response, Request } from 'express';
 class UserController implements BaseController {
   constructor(private readonly userService: UserService) {}
 
-  index = async (req: Request & AuthenticatedRequest, res: Response) => {
-    const { user_guid } = req;
-
+  index = async (_req: Request & AuthenticatedRequest, res: Response) => {
     try {
       const users = await this.userService.getAllUsers();
 
@@ -30,10 +28,9 @@ class UserController implements BaseController {
 
   delete = async (req: Request<{ user_guid: string }> & AuthenticatedRequest, res: Response) => {
     try {
-      const { user_guid: requestUserGuid } = req;
       const { user_guid: paramsUserGuid } = req.params;
 
-      await this.userService.deleteUser(requestUserGuid, paramsUserGuid);
+      await this.userService.deleteUser(paramsUserGuid);
 
       return res.status(200).json();
     } catch (error) {
@@ -50,18 +47,12 @@ class UserController implements BaseController {
     res: Response
   ) => {
     try {
-      const { user_guid: requestUserGuid } = req;
       const { user_guid: paramsUserGuid } = req.params;
 
-      const returnObject = await this.userService.updateUser(
-        requestUserGuid,
-        paramsUserGuid,
-        req.body
-      );
+      const returnObject = await this.userService.updateUser(paramsUserGuid, req.body);
 
       return res.status(200).json(returnObject);
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
@@ -69,9 +60,22 @@ class UserController implements BaseController {
     }
   };
 
-  show() {
-    throw new Error('Method not implemented.');
-  }
+  show = async (
+    req: Request<{ user_guid: string }, null, UserPatchRequestPayload> & AuthenticatedRequest,
+    res: Response
+  ) => {
+    const { user_guid: paramUserGuid } = req.params;
+    try {
+      const user = await this.userService.getUser(paramUserGuid);
+
+      return res.status(200).json(user);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+      return res.status(500).json(error);
+    }
+  };
 }
 
 export { UserController };

@@ -15,7 +15,7 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
 
   router.get('/', (isAdmin as unknown) as Handler, (index as unknown) as Handler);
 
-  router.post('/', (store as unknown) as Handler);
+  router.post('/', (isAdmin as unknown) as Handler, (store as unknown) as Handler);
 
   return router;
 };

@@ -14,6 +14,10 @@ export class ClassService {
     'class_stage_guid',
   ];
 
+  getAllClasses = async () => {
+    return await this.classEntity.getAllClasses(this.returningFields);
+  };
+
   insertClass = async (payload: ClassInsertPayload) => {
     const schema = Joi.object({
       description: Joi.string().required().max(45),

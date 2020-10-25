@@ -1,4 +1,4 @@
-import { AddressModel, UserModel } from '@models/entities';
+import { AddressModel, RoleModel, UserModel } from '@models/entities';
 import { SignUpRequest } from '@models/requests/auth';
 import { UserPatchRequestPayload } from '@models/requests/user';
 import Knex from 'knex';

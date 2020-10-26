@@ -1,7 +1,13 @@
 import express, { json, Request, Response } from 'express';
 import cors from 'cors';
 
-import { addressRoutes, authRoutes, classRoutes, userRoutes } from '@routes/index';
+import {
+  addressRoutes,
+  authRoutes,
+  classRoutes,
+  disciplineRoutes,
+  userRoutes,
+} from '@routes/index';
 import { JwtService } from '@services/index';
 import { EnviromentConfig, KnexInstance } from '@config/index';
 import { AuthMiddleware, RoleMiddlewares } from '@middlewares/index';
@@ -27,7 +33,9 @@ export default async (app: express.Application) => {
 
   app.use('/addresses/', addressRoutes(roleMiddlewares));
 
-  app.use('/classes', classRoutes(roleMiddlewares));
+  app.use('/classes/', classRoutes(roleMiddlewares));
+
+  app.use('/disciplines/', disciplineRoutes(roleMiddlewares));
 
   return app;
 };

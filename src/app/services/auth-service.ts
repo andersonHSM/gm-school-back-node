@@ -10,7 +10,6 @@ import { Address, PersonalData, Role, User } from '@database/accessors';
 class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    // private knex: Knex,
     private readonly environmentConfig: EnvConfig,
     private readonly user: User,
     private readonly personalData: PersonalData,
@@ -42,6 +41,10 @@ class AuthService {
       this.userQueryReturningStatement,
       this.personalDataQueryReturningStatement
     );
+
+    if (!signUpRequest.personal_data) {
+      throw new HttpException('User personal data must be provided', 711, 400);
+    }
 
     if (existingUser) {
       throw new HttpException('A user already exists with supplied e-mail', 701, 400);
@@ -78,18 +81,14 @@ class AuthService {
       }
     }
 
-    await this.setUserRole(user_guid as string, signUpRequest.role);
-
-    if (!signUpRequest.personal_data) {
-      throw new HttpException('User personal data must be provider', 711, 400);
-    }
+    await this.setUserRole(user_guid, role);
 
     const personal_data = await this.insertPersonalData(
       user_guid as ArrayLike<number>,
       signUpRequest.personal_data
     );
 
-    return { ...user, personal_data, address };
+    return { ...user, role, personal_data, address };
   };
 
   signIn = async (loginRequest: LoginRequest) => {
@@ -107,7 +106,11 @@ class AuthService {
 
       return { token, ...user };
     } catch (error) {
-      throw error;
+      switch (error.message) {
+        case "Cannot read property 'user_guid' of undefined":
+        default:
+          throw new HttpException(`User not found`, 704, 404);
+      }
     }
   };
 
@@ -128,7 +131,7 @@ class AuthService {
         password_hash: string;
       } & PersonalDataModel = await this.user.getUserByEmail(email, [
         ...userReturningStatement,
-        'password_hash',
+        'user.password_hash',
       ]);
 
       if (!user && isLogin) {
@@ -160,6 +163,7 @@ class AuthService {
         personal_data,
       };
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       }
@@ -197,7 +201,7 @@ class AuthService {
     return personalData;
   };
 
-  private setUserRole = async (user_guid: string, role_description: string) => {
+  private setUserRole = async (user_guid: string | ArrayLike<number>, role_description: string) => {
     const role = await this.role.getRoleByDescription(role_description, [
       'role_guid',
       'description',
@@ -206,6 +210,8 @@ class AuthService {
     const { role_guid } = role;
 
     await this.role.setRoleForUser(role_guid, user_guid);
+
+    return role.description;
   };
 }
 

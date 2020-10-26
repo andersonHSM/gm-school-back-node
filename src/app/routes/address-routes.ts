@@ -2,8 +2,8 @@ import { Handler, Router } from 'express';
 import { AddressService } from '@services/index';
 
 import { KnexInstance } from '@config/index';
-import { AddressController } from '@controllers/index';
-import { Address } from '@database/accessors';
+import { AddressController } from '@controllers/address-conrtoller';
+import { Address, Role } from '@database/accessors';
 import { RoleMiddlewares } from '@middlewares/index';
 
 export const addressRoutes = (roleMiddlewares: RoleMiddlewares) => {

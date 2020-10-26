@@ -49,7 +49,7 @@ class PersonalData {
 
   updatePersonalData = async (
     user_guid: string,
-    fieldsToReturn: string[],
+    returningFields: string[],
     payload: Omit<PersonalDataModel, 'personal_data_guid'>
   ): Promise<PersonalDataModel> => {
     const [{ personal_data_guid, ...personalData }]: PersonalDataModel[] = await this.knex(
@@ -57,7 +57,7 @@ class PersonalData {
     )
       .where({ user_guid: uuidParse(user_guid) })
       .update(payload)
-      .returning([...fieldsToReturn, 'personal_data_guid']);
+      .returning([...returningFields, 'personal_data_guid']);
 
     return {
       ...personalData,

@@ -10,7 +10,6 @@ import { Address, PersonalData, Role, User } from '@database/accessors';
 class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    // private knex: Knex,
     private readonly environmentConfig: EnvConfig,
     private readonly user: User,
     private readonly personalData: PersonalData,

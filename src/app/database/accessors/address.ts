@@ -60,13 +60,22 @@ class Address {
     returningFields: string[],
     payload: AddressUpdatePayload
   ): Promise<AddressModel> => {
+    console.log(
+      await this.knex('address')
+        .where({
+          address_guid: typeof address_guid === 'string' ? uuidParse(address_guid) : address_guid,
+        })
+        .whereNull('deleted_at')
+        .update(payload)
+        .returning([...returningFields, 'address_guid'])
+    );
     const [{ address_guid: entityAddressGuid, ...address }]: AddressModel[] = await this.knex(
       'address'
     )
       .where({
         address_guid: typeof address_guid === 'string' ? uuidParse(address_guid) : address_guid,
       })
-      .whereNotNull('deleted_at')
+      .whereNull('deleted_at')
       .update(payload)
       .returning([...returningFields, 'address_guid']);
 

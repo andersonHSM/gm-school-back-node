@@ -26,9 +26,15 @@ class User {
 
   getUserByEmail = async (email: string, returningFields: string[]): Promise<UserModel & any> => {
     const { user_guid, ...user }: UserModel = await this.knex('user')
-      .select(returningFields)
-      .where({ email })
-      .whereNull('deleted_at')
+      .select([...returningFields, 'role.description as role'])
+      .where({ ['user.email']: email })
+      .whereNull('user.deleted_at')
+      .innerJoin('user_role', function () {
+        this.on('user_role.user_guid', '=', 'user.user_guid');
+      })
+      .innerJoin('role', function () {
+        this.on('user_role.role_guid', '=', 'role.role_guid');
+      })
       .first();
 
     return { ...user, user_guid: uuidStringify(user_guid as ArrayLike<number>) };
@@ -81,18 +87,17 @@ class User {
     }
 
     const [user]: UserModel[] = await this.knex('user')
-      .where({ user_guid: typeof user_guid === 'string' ? uuidParse(user_guid) : user_guid })
+      .where({
+        ['user.user_guid']: typeof user_guid === 'string' ? uuidParse(user_guid) : user_guid,
+      })
       .where('user.deleted_at', null)
       .update(payload)
-      .returning([...returningFields, 'role.description as role'])
-      .innerJoin('user_role', function () {
-        this.on('user_role.user_guid', '=', 'user.user_guid');
-      })
-      .innerJoin('role', function () {
-        this.on('user_role.role_guid', '=', 'role.role_guid');
-      });
+      .returning([...returningFields]);
 
-    return { ...user, user_guid: uuidStringify(user.user_guid as ArrayLike<number>) };
+    return {
+      ...user,
+      user_guid: uuidStringify(user.user_guid as ArrayLike<number>),
+    };
   };
 
   deleteUser = async (user_guid: string): Promise<void> => {

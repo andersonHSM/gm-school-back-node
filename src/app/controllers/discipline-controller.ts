@@ -6,8 +6,11 @@ import { Request, Response } from 'express';
 
 export class DisciplineController implements BaseController {
   constructor(private readonly disciplineService: DisciplineService) {}
-  index(_req: Request, res: Response) {
+  index = async (_req: Request, res: Response) => {
     try {
+      const disciplines = await this.disciplineService.getAllActiveDisciplines();
+
+      return res.status(200).json(disciplines);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
@@ -15,7 +18,7 @@ export class DisciplineController implements BaseController {
 
       return res.status(500).json(error.message);
     }
-  }
+  };
 
   store = async (req: Request<null, null, DisciplineInsertPayload>, res: Response) => {
     const { body: payload } = req;
@@ -23,7 +26,7 @@ export class DisciplineController implements BaseController {
     try {
       const discipline = await this.disciplineService.insertDiscipline(payload);
 
-      return res.status(200).json(discipline);
+      return res.status(201).json(discipline);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
@@ -68,8 +71,13 @@ export class DisciplineController implements BaseController {
     }
   };
 
-  show(_req: Request, res: Response) {
+  show = async (req: Request<{ discipline_guid: string }>, res: Response) => {
+    const { discipline_guid } = req.params;
+
     try {
+      const discipline = await this.disciplineService.getActiveDiscipline(discipline_guid);
+
+      return res.status(200).json(discipline);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
@@ -77,5 +85,5 @@ export class DisciplineController implements BaseController {
 
       return res.status(500).json(error.message);
     }
-  }
+  };
 }

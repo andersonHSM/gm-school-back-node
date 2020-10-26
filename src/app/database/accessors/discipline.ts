@@ -6,6 +6,36 @@ import { stringify as uuidStringify, parse as uuidParse, v4 as uuidv4 } from 'uu
 export class Discipline {
   constructor(private readonly knex: Knex) {}
 
+  getAllActiveDisciplines = async (returningFields: string[]) => {
+    let disciplines: DisciplineModel[] = await this.knex('discipline')
+      .select([...returningFields, 'discipline.discipline_guid'])
+      .whereNull('deleted_at');
+
+    disciplines = disciplines.map(discipline => {
+      const discipline_guid = uuidStringify(discipline.discipline_guid as ArrayLike<number>);
+
+      return { ...discipline, discipline_guid };
+    });
+
+    return disciplines;
+  };
+
+  getActiveDiscipline = async (
+    discipline_guid: string | ArrayLike<number>,
+    returningFields: string[]
+  ) => {
+    const binaryDisciplineGuid =
+      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+
+    const { description, ...remaining }: DisciplineModel = await this.knex('discipline')
+      .select([...returningFields, 'discipline.discipline_guid'])
+      .where('discipline.discipline_guid', binaryDisciplineGuid)
+      .whereNull('deleted_at')
+      .first();
+
+    return { discipline_guid, description };
+  };
+
   insertDiscipline = async (returningFields: string[], payload: DisciplineInsertPayload) => {
     const discipline_guid = uuidv4();
 

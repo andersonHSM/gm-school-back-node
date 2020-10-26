@@ -11,7 +11,13 @@ export const disciplineRoutes = (roleMiddlewares: RoleMiddlewares) => {
 
   const disciplineService = new DisciplineService(new Discipline(KnexInstance));
 
-  const { store, update, delete: deleteFn } = new DisciplineController(disciplineService);
+  const { store, update, delete: deleteFn, index, show } = new DisciplineController(
+    disciplineService
+  );
+
+  router.get('/', (index as unknown) as Handler);
+
+  router.get('/:discipline_guid', (show as unknown) as Handler);
 
   router.post('/', (isAdmin as unknown) as Handler, (store as unknown) as Handler);
 

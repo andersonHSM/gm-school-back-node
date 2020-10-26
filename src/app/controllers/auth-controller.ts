@@ -12,7 +12,7 @@ export class AuthController implements BaseController {
     try {
       const insertUserReturn = await this.authService.signUp(req.body);
 
-      return res.status(200).json(insertUserReturn);
+      return res.status(201).json(insertUserReturn);
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) {

@@ -16,6 +16,7 @@ export class DisciplineController implements BaseController {
       return res.status(500).json(error.message);
     }
   }
+
   store = async (req: Request<null, null, DisciplineInsertPayload>, res: Response) => {
     const { body: payload } = req;
 
@@ -31,8 +32,13 @@ export class DisciplineController implements BaseController {
       return res.status(500).json(error.message);
     }
   };
-  delete(_req: Request, res: Response) {
+
+  delete = async (req: Request<{ discipline_guid: string }>, res: Response) => {
+    const { discipline_guid } = req.params;
     try {
+      await this.disciplineService.deleteDiscipline(discipline_guid);
+
+      return res.status(200).json();
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
@@ -40,7 +46,8 @@ export class DisciplineController implements BaseController {
 
       return res.status(500).json(error.message);
     }
-  }
+  };
+
   update = async (
     req: Request<{ discipline_guid: string }, null, DisciplineUpdatePayload>,
     res: Response
@@ -60,6 +67,7 @@ export class DisciplineController implements BaseController {
       return res.status(500).json(error.message);
     }
   };
+
   show(_req: Request, res: Response) {
     try {
     } catch (error) {

@@ -51,4 +51,18 @@ export class DisciplineService {
       }
     }
   };
+
+  deleteDiscipline = async (discipline_guid: string) => {
+    try {
+      return await this.discipline.deleteDiscipline(discipline_guid);
+    } catch (error) {
+      switch (error.message) {
+        case "Cannot read property 'description' of undefined":
+        case "Cannot read property 'discipline_guid' of undefined":
+          throw new HttpException('Discipline not found', 901, 404);
+        default:
+          throw new HttpException(error.message, 999, 500);
+      }
+    }
+  };
 }

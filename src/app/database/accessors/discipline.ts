@@ -38,4 +38,18 @@ export class Discipline {
       description,
     };
   };
+
+  deleteDiscipline = async (discipline_guid: string | ArrayLike<number>) => {
+    const binaryDisciplineGuid =
+      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+
+    const [{ discipline_guid: queryDisciplineGuid }]: {
+      discipline_guid: ArrayLike<number>;
+    }[] = await this.knex('discipline')
+      .where('discipline_guid', binaryDisciplineGuid)
+      .update('deleted_at', this.knex.fn.now())
+      .returning(['discipline_guid']);
+
+    return { discipline_guid: uuidStringify(queryDisciplineGuid) };
+  };
 }

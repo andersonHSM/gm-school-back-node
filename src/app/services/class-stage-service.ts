@@ -8,6 +8,17 @@ export class ClassStageService {
 
   private readonly returningFields = ['class_stage.class_stage_guid', 'class_stage.description'];
 
+  getAllActiveClassStages = async () => {
+    try {
+      return await this.classStage.getAllActiveClassStages(this.returningFields);
+    } catch (error) {
+      switch (error.message) {
+        default:
+          throw new HttpException(error.message, 999, 500);
+      }
+    }
+  };
+
   insertClassStage = async (payload: ClassStageInsertPayload) => {
     const schema = Joi.object({
       description: Joi.string().max(25).required(),

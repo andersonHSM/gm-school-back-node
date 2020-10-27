@@ -6,6 +6,17 @@ import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uui
 export class ClassStage {
   constructor(private readonly knex: Knex) {}
 
+  getAllActiveClassStages = async (returningFields: string[]) => {
+    let classStages: ClassStageModel[] = await this.knex('class_stage')
+      .select(returningFields)
+      .whereNull('deleted_at');
+
+    return classStages.map(({ description, class_stage_guid }) => ({
+      class_stage_guid: uuidStringfy(class_stage_guid as ArrayLike<number>),
+      description,
+    }));
+  };
+
   insertClassStage = async (returningFields: string[], payload: ClassStageInsertPayload) => {
     const class_stage_guid = uuidv4();
     const binaryClassStageGuid = uuidParse(class_stage_guid);

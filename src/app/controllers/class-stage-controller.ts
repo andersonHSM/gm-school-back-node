@@ -7,9 +7,20 @@ import { Request, Response } from 'express';
 export class ClassStageController implements BaseController {
   constructor(private readonly classStageService: ClassStageService) {}
 
-  index() {
-    throw new Error('Method not implemented.');
-  }
+  index = async (_req: Request, res: Response) => {
+    try {
+      const classStages = await this.classStageService.getAllActiveClassStages();
+
+      return res.status(200).json(classStages);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json(error.message);
+    }
+  };
+
   store = async (req: Request<null, null, ClassStageInsertPayload>, res: Response) => {
     const { body: payload } = req;
 
@@ -25,6 +36,7 @@ export class ClassStageController implements BaseController {
       return res.status(500).json(error.message);
     }
   };
+
   delete() {
     throw new Error('Method not implemented.');
   }

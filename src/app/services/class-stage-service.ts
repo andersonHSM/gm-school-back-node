@@ -38,4 +38,20 @@ export class ClassStageService {
 
     return classStage;
   };
+
+  getActiveClassStageByGuid = async (class_stage_guid: string) => {
+    try {
+      return await this.classStage.getActiveClassStageByGuid(
+        class_stage_guid,
+        this.returningFields
+      );
+    } catch (error) {
+      switch (error.message) {
+        case "Cannot read property 'description' of undefined":
+          throw new HttpException('Class stage not found', 901, 404);
+        default:
+          throw new HttpException(error.message, 999, 500);
+      }
+    }
+  };
 }

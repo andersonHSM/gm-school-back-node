@@ -34,6 +34,25 @@ export class ClassStage {
     return { description, class_stage_guid };
   };
 
+  getActiveClassStageByGuid = async (
+    class_stage_guid: string | ArrayLike<number>,
+    returningFields: string[]
+  ) => {
+    const guid = this.verifyUuid(class_stage_guid);
+
+    const { description }: ClassStageModel = await this.knex('class_stage')
+      .select(returningFields)
+      .where({ class_stage_guid: guid })
+      .whereNull('deleted_at')
+      .first();
+
+    return { class_stage_guid, description };
+  };
+
+  private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
+    return typeof guid === 'string' ? uuidParse(guid) : guid;
+  };
+
   private verifyExistingClassStage = async (description: string) => {
     const classStage = await this.knex('class_stage')
       .where({ description })

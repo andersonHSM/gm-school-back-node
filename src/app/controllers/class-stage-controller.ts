@@ -43,7 +43,19 @@ export class ClassStageController implements BaseController {
   update() {
     throw new Error('Method not implemented.');
   }
-  show() {
-    throw new Error('Method not implemented.');
-  }
+  show = async (req: Request<{ class_stage_guid: string }>, res: Response) => {
+    const { class_stage_guid } = req.params;
+
+    try {
+      const classStage = await this.classStageService.getActiveClassStageByGuid(class_stage_guid);
+
+      return res.status(200).json(classStage);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json(error.message);
+    }
+  };
 }

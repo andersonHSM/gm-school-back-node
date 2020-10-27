@@ -4,3 +4,4 @@ export { RoleModel } from './role-model';
 export { AddressModel } from './address-model';
 export { ClassModel } from './class-model';
 export { DisciplineModel } from './discipline-model';
+export { ClassStageModel } from './class-stage-model';

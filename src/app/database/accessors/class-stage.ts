@@ -1,5 +1,35 @@
+import { ClassStageModel } from '@models/entities';
+import { ClassStageInsertPayload } from '@models/requests/class-stage';
 import Knex from 'knex';
+import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
 
 export class ClassStage {
   constructor(private readonly knex: Knex) {}
+
+  insertClassStage = async (returningFields: string[], payload: ClassStageInsertPayload) => {
+    const class_stage_guid = uuidv4();
+    const binaryClassStageGuid = uuidParse(class_stage_guid);
+
+    if (await this.verifyExistingClassStage(payload.description)) {
+      return null;
+    }
+
+    const finalPayload = { ...payload, class_stage_guid: binaryClassStageGuid };
+
+    const [{ description }]: ClassStageModel[] = await this.knex('class_stage')
+      .insert(finalPayload)
+      .returning(returningFields);
+
+    return { description, class_stage_guid };
+  };
+
+  private verifyExistingClassStage = async (description: string) => {
+    const classStage = await this.knex('class_stage')
+      .where({ description })
+      .returning(['description'])
+      .whereNull('deleted_at')
+      .first();
+
+    return !!classStage;
+  };
 }

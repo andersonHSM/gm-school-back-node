@@ -4,3 +4,4 @@ export { UserService } from './user-service';
 export { AddressService } from './address-service';
 export { ClassService } from './class-service';
 export { DisciplineService } from './discipline-service';
+export { ClassStageService } from './class-stage-service';

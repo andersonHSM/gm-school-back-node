@@ -5,6 +5,7 @@ import {
   addressRoutes,
   authRoutes,
   classRoutes,
+  classStageRoutes,
   disciplineRoutes,
   userRoutes,
 } from '@routes/index';
@@ -36,6 +37,8 @@ export default async (app: express.Application) => {
   app.use('/classes/', classRoutes(roleMiddlewares));
 
   app.use('/disciplines/', disciplineRoutes(roleMiddlewares));
+
+  app.use('/class-stage/', classStageRoutes(roleMiddlewares));
 
   return app;
 };

@@ -1,6 +1,6 @@
 import { HttpException } from '@exceptions/index';
 import { BaseController } from '@models/index';
-import { ClassStageInsertPayload } from '@models/requests/class-stage';
+import { ClassStageInsertPayload, ClassStageUpdatePayload } from '@models/requests/class-stage';
 import { ClassStageService } from '@services/index';
 import { Request, Response } from 'express';
 
@@ -40,9 +40,27 @@ export class ClassStageController implements BaseController {
   delete() {
     throw new Error('Method not implemented.');
   }
-  update() {
-    throw new Error('Method not implemented.');
-  }
+
+  update = async (
+    req: Request<{ class_stage_guid: string }, null, ClassStageUpdatePayload>,
+    res: Response
+  ) => {
+    const { class_stage_guid } = req.params;
+    const { body: payload } = req;
+
+    try {
+      const classStage = await this.classStageService.updateClassStage(class_stage_guid, payload);
+
+      return res.status(200).json(classStage);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json(error.message);
+    }
+  };
+
   show = async (req: Request<{ class_stage_guid: string }>, res: Response) => {
     const { class_stage_guid } = req.params;
 

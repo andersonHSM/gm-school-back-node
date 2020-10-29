@@ -1,5 +1,5 @@
 import { ClassStageModel } from '@models/entities';
-import { ClassStageInsertPayload } from '@models/requests/class-stage';
+import { ClassStageInsertPayload, ClassStageUpdatePayload } from '@models/requests/class-stage';
 import Knex from 'knex';
 import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
 
@@ -49,11 +49,30 @@ export class ClassStage {
     return { class_stage_guid, description };
   };
 
+  updateClassStage = async (
+    class_stage_guid: string | ArrayLike<number>,
+    returningFields: string[],
+    payload: ClassStageUpdatePayload
+  ) => {
+    const binaryGuid = this.verifyUuid(class_stage_guid);
+
+    if (await this.verifyExistingClassStage(payload.description)) {
+      return null;
+    }
+
+    const [{ description }]: ClassStageModel[] = await this.knex('class_stage')
+      .where({ class_stage_guid: binaryGuid })
+      .update(payload)
+      .returning(returningFields);
+
+    return { class_stage_guid, description };
+  };
+
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
     return typeof guid === 'string' ? uuidParse(guid) : guid;
   };
 
-  private verifyExistingClassStage = async (description: string) => {
+  verifyExistingClassStage = async (description: string) => {
     const classStage = await this.knex('class_stage')
       .where({ description })
       .returning(['description'])

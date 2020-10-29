@@ -68,6 +68,22 @@ export class ClassStage {
     return { class_stage_guid, description };
   };
 
+  deleteClassStage = async (
+    class_stage_guid: string | ArrayLike<number>,
+    returningFields: string[]
+  ) => {
+    const binaryGuid = this.verifyUuid(class_stage_guid);
+
+    const [deletedClassStage] = await this.knex('class_stage')
+      .where({ class_stage_guid: binaryGuid })
+      .update('deleted_at', null)
+      .returning([...returningFields, 'deleted_at']);
+
+    console.log(deletedClassStage);
+
+    return deletedClassStage;
+  };
+
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
     return typeof guid === 'string' ? uuidParse(guid) : guid;
   };

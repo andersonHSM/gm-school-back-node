@@ -37,9 +37,21 @@ export class ClassStageController implements BaseController {
     }
   };
 
-  delete() {
-    throw new Error('Method not implemented.');
-  }
+  delete = async (req: Request<{ class_stage_guid: string }>, res: Response) => {
+    const { class_stage_guid } = req.params;
+
+    try {
+      await this.classStageService.deleteClassStage(class_stage_guid);
+
+      return res.status(200).json();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json(error.message);
+    }
+  };
 
   update = async (
     req: Request<{ class_stage_guid: string }, null, ClassStageUpdatePayload>,

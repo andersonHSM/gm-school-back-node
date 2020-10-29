@@ -88,4 +88,17 @@ export class ClassStageService {
       }
     }
   };
+
+  deleteClassStage = async (class_stage_guid: string) => {
+    const deletedClassStage = await this.classStage.deleteClassStage(
+      class_stage_guid,
+      this.returningFields
+    );
+
+    if (!deletedClassStage) {
+      throw new HttpException('Class stage not found', 901, 404);
+    }
+
+    return deletedClassStage;
+  };
 }

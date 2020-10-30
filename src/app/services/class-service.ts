@@ -68,7 +68,6 @@ export class ClassService {
     try {
       return await this.classEntity.updateClass(class_guid, this.returningFields, payload);
     } catch (error) {
-      console.log(error);
       switch (error.message) {
         case "Cannot read property 'class_guid' of undefined":
         default:

@@ -61,8 +61,6 @@ class UserService {
         throw new HttpException('User must have a valid address to be updated', 709, 404);
       }
 
-      console.log(Object.keys(addressPayload));
-
       address =
         address_guid && addressPayload
           ? await this.address.updateAddress(
@@ -89,7 +87,6 @@ class UserService {
 
       return { ...userReturn, user_guid: userToUpdateGuid, personal_data, address };
     } catch (error) {
-      console.log(error);
       switch (error.message) {
         case "Cannot read property 'address_guid' of undefined":
           throw new HttpException('Address not found', 602, 404);

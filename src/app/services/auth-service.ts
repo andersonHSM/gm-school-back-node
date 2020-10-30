@@ -163,7 +163,6 @@ class AuthService {
         personal_data,
       };
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       }

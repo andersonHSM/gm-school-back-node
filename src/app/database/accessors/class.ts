@@ -1,7 +1,17 @@
 import { ClassModel } from '@models/entities';
-import { ClassInsertPayload, ClassUpdatePayload } from '@models/requests/class';
+import {
+  ClassInsertPayload,
+  ClassUpdatePayload,
+  SetDisciplinesToClassPayload,
+} from '@models/requests/class';
 import Knex from 'knex';
 import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
+
+type finalSetDisciplineToClassPayload = {
+  class_has_discipline_guid: string | ArrayLike<number>;
+  class_guid: string | ArrayLike<number>;
+  discipline_guid: string | ArrayLike<number>;
+}[];
 
 export class Class {
   constructor(private readonly knex: Knex) {}
@@ -93,7 +103,70 @@ export class Class {
     };
   };
 
+  setDisciplinesToClass = async (
+    class_guid: string,
+    returningFields: string[],
+    payload: SetDisciplinesToClassPayload
+  ) => {
+    const binaryDisciplineGuids = payload.map(({ discipline_guid }) =>
+      this.verifyUuid(discipline_guid as string)
+    );
+    const binaryClassGuid = this.verifyUuid(class_guid);
+
+    let finalPayload: finalSetDisciplineToClassPayload = [];
+
+    for (const discipline_guid of binaryDisciplineGuids) {
+      const existingDiscipline = await this.knex('discipline')
+        .whereNull('deleted_at')
+        .where({ discipline_guid })
+        .select('*')
+        .first();
+
+      const existingClassDiscipline = await this.knex('class_has_discipline')
+        .where({
+          class_guid: binaryClassGuid,
+          discipline_guid,
+        })
+        .returning('*')
+        .first();
+
+      if (!existingClassDiscipline && existingDiscipline) {
+        const class_has_discipline_guid = uuidParse(uuidv4());
+
+        finalPayload = finalPayload.concat({
+          class_has_discipline_guid,
+          class_guid: binaryClassGuid,
+          discipline_guid,
+        });
+      }
+    }
+
+    if (finalPayload.length === 0) {
+      return [];
+    }
+
+    const queryReturn: finalSetDisciplineToClassPayload = await this.knex('class_has_discipline')
+      .insert(finalPayload)
+      .returning(['class_has_discipline_guid', 'class_guid', 'discipline_guid']);
+
+    return queryReturn.map(({ class_guid, discipline_guid, class_has_discipline_guid }) => {
+      return {
+        class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
+        class_guid: uuidStringfy(class_guid as ArrayLike<number>),
+        discipline_guid: uuidStringfy(discipline_guid as ArrayLike<number>),
+      };
+    });
+  };
+
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
     return typeof guid === 'string' ? uuidParse(guid) : guid;
+  };
+
+  verifyExistingClass = async (class_guid: string) => {
+    const binaryGuid = this.verifyUuid(class_guid);
+    return await this.knex('class')
+      .where({ class_guid: binaryGuid })
+      .whereNull('deleted_at')
+      .first();
   };
 }

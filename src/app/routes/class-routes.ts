@@ -11,7 +11,16 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   const { isAdmin } = roleMiddlewares;
   const classService = new ClassService(new Class(KnexInstance));
 
-  const { index, store, show, delete: deleteFn, update } = new ClassController(classService);
+  const {
+    index,
+    store,
+    show,
+    delete: deleteFn,
+    update,
+    setDisciplinesToClass,
+  } = new ClassController(classService);
+
+  // Basic Class Entity CRUD
 
   router.get('/', (isAdmin as unknown) as Handler, (index as unknown) as Handler);
 
@@ -22,6 +31,10 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   router.delete('/:class_guid', (isAdmin as unknown) as Handler, (deleteFn as unknown) as Handler);
 
   router.post('/', (isAdmin as unknown) as Handler, (store as unknown) as Handler);
+
+  // Advanced functionalities
+
+  router.post('/:class_guid/disciplines', (isAdmin as unknown) as Handler, setDisciplinesToClass);
 
   return router;
 };

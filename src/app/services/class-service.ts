@@ -1,6 +1,10 @@
 import { Class } from '@database/accessors';
 import { HttpException } from '@exceptions/index';
-import { ClassInsertPayload, ClassUpdatePayload } from '@models/requests/class';
+import {
+  ClassInsertPayload,
+  ClassUpdatePayload,
+  SetDisciplinesToClassPayload,
+} from '@models/requests/class';
 import Joi from 'joi';
 
 export class ClassService {
@@ -81,6 +85,27 @@ export class ClassService {
         case "Cannot read property 'class_guid' of undefined":
         default:
           throw new HttpException(`Class not found`, 602, 404);
+      }
+    }
+  };
+
+  setDisciplinesToClass = async (class_guid: string, payload: SetDisciplinesToClassPayload) => {
+    const existingClass = await this.classEntity.verifyExistingClass(class_guid);
+
+    if (!existingClass) {
+      throw new HttpException('Class not found', 602, 404);
+    }
+
+    try {
+      return await this.classEntity.setDisciplinesToClass(
+        class_guid,
+        this.returningFields,
+        payload
+      );
+    } catch (error) {
+      switch (error.message) {
+        default:
+          throw new HttpException(error.message, 999, 500);
       }
     }
   };

@@ -1,7 +1,11 @@
 import { HttpException } from '@exceptions/index';
 import { BaseController } from '@models/index';
 import { AuthenticatedRequest } from '@models/requests/auth';
-import { ClassInsertPayload, ClassUpdatePayload } from '@models/requests/class';
+import {
+  ClassInsertPayload,
+  ClassUpdatePayload,
+  SetDisciplinesToClassPayload,
+} from '@models/requests/class';
 import { ClassService } from '@services/index';
 import { Request, Response } from 'express';
 
@@ -80,6 +84,26 @@ export class ClassController implements BaseController {
     const { class_guid } = req.params;
     try {
       const classReturn = await this.classService.getClass(class_guid);
+
+      return res.status(200).json(classReturn);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  setDisciplinesToClass = async (
+    req: Request<{ class_guid: string }, null, SetDisciplinesToClassPayload>,
+    res: Response
+  ) => {
+    const { class_guid } = req.params;
+    const { body: payload } = req;
+
+    try {
+      const classReturn = await this.classService.setDisciplinesToClass(class_guid, payload);
 
       return res.status(200).json(classReturn);
     } catch (error) {

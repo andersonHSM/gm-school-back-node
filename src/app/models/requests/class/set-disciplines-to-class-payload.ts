@@ -1,1 +1,1 @@
-export type SetDisciplinesToClassPayload = { discipline_guid: string | ArrayLike<number> }[];
+export type SetDisciplinesToClassRequestPayload = { discipline_guid: string | ArrayLike<number> }[];

@@ -1,14 +1,14 @@
-import { Class } from '@database/accessors';
+import { Class, Discipline } from '@database/accessors';
 import { HttpException } from '@exceptions/index';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
-  SetDisciplinesToClassPayload,
+  SetDisciplinesToClassRequestPayload,
 } from '@models/requests/class';
 import Joi from 'joi';
 
 export class ClassService {
-  constructor(private readonly classEntity: Class) {}
+  constructor(private readonly classEntity: Class, private readonly discipline: Discipline) {}
 
   private readonly returningFields = [
     'class.class_guid',
@@ -16,6 +16,12 @@ export class ClassService {
     'class.class_year',
     'class.class_division',
     'class.class_stage_guid',
+  ];
+
+  private readonly classHasDisciplineReturningFields = [
+    'class_has_discipline.class_has_discipline_guid',
+    'class_has_discipline.class_guid',
+    'class_has_discipline.discipline_guid',
   ];
 
   getClass = async (class_guid: string) => {
@@ -88,18 +94,64 @@ export class ClassService {
     }
   };
 
-  setDisciplinesToClass = async (class_guid: string, payload: SetDisciplinesToClassPayload) => {
+  setDisciplinesToClass = async (
+    class_guid: string,
+    payload: SetDisciplinesToClassRequestPayload
+  ) => {
     const existingClass = await this.classEntity.verifyExistingClass(class_guid);
 
     if (!existingClass) {
       throw new HttpException('Class not found', 602, 404);
     }
 
+    let finalPayload: any[] = [];
+
+    for (const { discipline_guid } of payload) {
+      const [existingDiscipline, existingClassDiscipline] = await Promise.all([
+        this.discipline.verifyExistingDiscipline(discipline_guid as string),
+        this.classEntity.verifyExistingClassDiscipline(class_guid, discipline_guid as string),
+      ]);
+
+      if (!existingClassDiscipline && existingDiscipline) {
+        finalPayload = finalPayload.concat({ discipline_guid });
+      }
+    }
+
+    if (finalPayload.length === 0) {
+      return [];
+    }
+
     try {
       return await this.classEntity.setDisciplinesToClass(
         class_guid,
-        this.returningFields,
-        payload
+        this.classHasDisciplineReturningFields,
+        finalPayload
+      );
+    } catch (error) {
+      switch (error.message) {
+        default:
+          throw new HttpException(error.message, 999, 500);
+      }
+    }
+  };
+
+  unsetDisciplineToClass = async (class_guid: string, discipline_guid: string) => {
+    const [existingClass, existingDiscipline] = await Promise.all([
+      this.classEntity.verifyExistingClass(class_guid),
+      this.discipline.verifyExistingDiscipline(discipline_guid),
+    ]);
+
+    if (!existingClass) {
+      throw new HttpException(`Class not found`, 602, 404);
+    } else if (!existingDiscipline) {
+      throw new HttpException('Discipline not found', 901, 404);
+    }
+
+    try {
+      return await this.classEntity.unsetDisciplineToClass(
+        class_guid,
+        discipline_guid,
+        this.classHasDisciplineReturningFields
       );
     } catch (error) {
       switch (error.message) {

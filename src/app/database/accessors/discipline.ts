@@ -84,13 +84,17 @@ export class Discipline {
     return typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
   };
 
-  vierifyExistinDiscipline = async (discipline_guid?: string, description?: string) => {
+  verifyExistingDiscipline = async (
+    discipline_guid?: string,
+    description: string | null = null
+  ): Promise<DisciplineModel> => {
     const binaryGuid = discipline_guid ? this.verifyUuid(discipline_guid) : null;
 
     return await this.knex('discipline')
       .where({ discipline_guid: binaryGuid })
       .orWhere({ description })
       .whereNull('deleted_at')
+      .select(['*'])
       .first();
   };
 }

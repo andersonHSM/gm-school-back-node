@@ -44,7 +44,7 @@ export class DisciplineService {
       throw new HttpException('Verify the fields', 712, 400);
     }
 
-    const existingDiscipline = await this.discipline.vierifyExistinDiscipline(
+    const existingDiscipline = await this.discipline.verifyExistingDiscipline(
       undefined,
       payload.description
     );

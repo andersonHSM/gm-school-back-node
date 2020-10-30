@@ -44,6 +44,15 @@ export class DisciplineService {
       throw new HttpException('Verify the fields', 712, 400);
     }
 
+    const existingDiscipline = await this.discipline.vierifyExistinDiscipline(
+      undefined,
+      payload.description
+    );
+
+    if (existingDiscipline) {
+      throw new HttpException('Discipline already exists', 802, 400);
+    }
+
     try {
       return await this.discipline.insertDiscipline(this.returningFields, payload);
     } catch (error) {

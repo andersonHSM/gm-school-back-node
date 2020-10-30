@@ -24,8 +24,7 @@ export class Discipline {
     discipline_guid: string | ArrayLike<number>,
     returningFields: string[]
   ) => {
-    const binaryDisciplineGuid =
-      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+    const binaryDisciplineGuid = this.verifyUuid(discipline_guid);
 
     const { description, ...remaining }: DisciplineModel = await this.knex('discipline')
       .select([...returningFields, 'discipline.discipline_guid'])
@@ -53,8 +52,7 @@ export class Discipline {
     returningFields: string[],
     payload: DisciplineUpdatePayload
   ) => {
-    const binaryDisciplineGuid =
-      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+    const binaryDisciplineGuid = this.verifyUuid(discipline_guid);
 
     const [
       { description, discipline_guid: queryDisciplineGuid },
@@ -70,8 +68,7 @@ export class Discipline {
   };
 
   deleteDiscipline = async (discipline_guid: string | ArrayLike<number>) => {
-    const binaryDisciplineGuid =
-      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+    const binaryDisciplineGuid = this.verifyUuid(discipline_guid);
 
     const [{ discipline_guid: queryDisciplineGuid }]: {
       discipline_guid: ArrayLike<number>;
@@ -81,5 +78,19 @@ export class Discipline {
       .returning(['discipline_guid']);
 
     return { discipline_guid: uuidStringify(queryDisciplineGuid) };
+  };
+
+  private verifyUuid = (discipline_guid: string | ArrayLike<number>) => {
+    return typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+  };
+
+  vierifyExistinDiscipline = async (discipline_guid?: string, description?: string) => {
+    const binaryGuid = discipline_guid ? this.verifyUuid(discipline_guid) : null;
+
+    return await this.knex('discipline')
+      .where({ discipline_guid: binaryGuid })
+      .orWhere({ description })
+      .whereNull('deleted_at')
+      .first();
   };
 }

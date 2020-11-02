@@ -160,4 +160,24 @@ export class ClassService {
       }
     }
   };
+
+  getActiveClassWithDisciplines = async (class_guid: string) => {
+    const existingClass = await this.classEntity.verifyExistingClass(class_guid);
+
+    if (!existingClass) {
+      throw new HttpException(`Class not found`, 602, 404);
+    }
+
+    try {
+      const classReturn = await this.classEntity.getClass(class_guid, this.returningFields);
+      const disciplines = await this.discipline.getDisciplineByClassGuid(class_guid);
+
+      return { ...classReturn, disciplines };
+    } catch (error) {
+      switch (error.message) {
+        default:
+          throw new HttpException(error.message, 999, 500);
+      }
+    }
+  };
 }

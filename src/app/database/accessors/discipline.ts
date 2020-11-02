@@ -1,7 +1,7 @@
 import Knex from 'knex';
 import { DisciplineModel } from '@models/entities';
 import { DisciplineInsertPayload, DisciplineUpdatePayload } from '@models/requests/discipline';
-import { stringify as uuidStringify, parse as uuidParse, v4 as uuidv4 } from 'uuid';
+import { stringify as uuidStringfy, parse as uuidParse, v4 as uuidv4 } from 'uuid';
 
 export class Discipline {
   constructor(private readonly knex: Knex) {}
@@ -12,7 +12,7 @@ export class Discipline {
       .whereNull('deleted_at');
 
     disciplines = disciplines.map(discipline => {
-      const discipline_guid = uuidStringify(discipline.discipline_guid as ArrayLike<number>);
+      const discipline_guid = uuidStringfy(discipline.discipline_guid as ArrayLike<number>);
 
       return { ...discipline, discipline_guid };
     });
@@ -62,7 +62,7 @@ export class Discipline {
       .returning([...returningFields, 'discipline_guid']);
 
     return {
-      discipline_guid: uuidStringify(queryDisciplineGuid as ArrayLike<number>),
+      discipline_guid: uuidStringfy(queryDisciplineGuid as ArrayLike<number>),
       description,
     };
   };
@@ -77,7 +77,7 @@ export class Discipline {
       .update('deleted_at', this.knex.fn.now())
       .returning(['discipline_guid']);
 
-    return { discipline_guid: uuidStringify(queryDisciplineGuid) };
+    return { discipline_guid: uuidStringfy(queryDisciplineGuid) };
   };
 
   private verifyUuid = (discipline_guid: string | ArrayLike<number>) => {
@@ -96,5 +96,23 @@ export class Discipline {
       .whereNull('deleted_at')
       .select(['*'])
       .first();
+  };
+
+  getDisciplineByClassGuid = async (class_guid: string) => {
+    const binaryGuid = this.verifyUuid(class_guid);
+
+    const disciplines = (
+      await this.knex('discipline')
+        .where('class_has_discipline.class_guid', binaryGuid)
+        .whereNull('discipline.deleted_at')
+        .select(['discipline.description', 'discipline.discipline_guid'])
+        .join('class_has_discipline', function () {
+          this.on('class_has_discipline.discipline_guid', '=', 'discipline.discipline_guid');
+        })
+    ).map(({ description, discipline_guid }) => {
+      return { discipline_guid: uuidStringfy(discipline_guid), description };
+    });
+
+    return disciplines;
   };
 }

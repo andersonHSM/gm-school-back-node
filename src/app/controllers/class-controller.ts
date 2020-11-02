@@ -136,4 +136,21 @@ export class ClassController implements BaseController {
       return res.status(500).json({ error: error.message });
     }
   };
+
+  getActiveClassWithDisciplines = async (req: Request<{ class_guid: string }>, res: Response) => {
+    const { class_guid } = req.params;
+    try {
+      const classWithDisciplines = await this.classService.getActiveClassWithDisciplines(
+        class_guid
+      );
+
+      return res.status(200).json(classWithDisciplines);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
 }

@@ -19,6 +19,7 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
     update,
     setDisciplinesToClass,
     unsetDisciplineToClass,
+    getActiveClassWithDisciplines,
   } = new ClassController(classService);
 
   // Basic Class Entity CRUD
@@ -42,6 +43,8 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
     (isAdmin as unknown) as Handler,
     unsetDisciplineToClass
   );
+
+  router.get('/:class_guid/disciplines', getActiveClassWithDisciplines);
 
   return router;
 };

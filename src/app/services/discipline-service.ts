@@ -1,5 +1,10 @@
 import { Discipline } from '@database/accessors';
-import { HttpException } from '@exceptions/index';
+import {
+  disciplineAlreadyExistsException,
+  disciplineNotFoundException,
+} from '@exceptions/discipline-exceptions';
+import { HttpException, unkownException } from '@exceptions/index';
+import { verifyTheFieldsException } from '@exceptions/schema';
 import { DisciplineInsertPayload, DisciplineUpdatePayload } from '@models/requests/discipline';
 import Joi from 'joi';
 
@@ -14,7 +19,7 @@ export class DisciplineService {
     } catch (error) {
       switch (error.message) {
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -25,10 +30,10 @@ export class DisciplineService {
     } catch (error) {
       switch (error.message) {
         case "Cannot read property 'description' of undefined":
-          throw new HttpException('Discipline not found', 901, 404);
+          throw disciplineNotFoundException();
 
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -41,7 +46,7 @@ export class DisciplineService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      throw new HttpException('Verify the fields', 712, 400);
+      throw verifyTheFieldsException();
     }
 
     const existingDiscipline = await this.discipline.verifyExistingDiscipline(
@@ -50,7 +55,7 @@ export class DisciplineService {
     );
 
     if (existingDiscipline) {
-      throw new HttpException('Discipline already exists', 802, 400);
+      throw disciplineAlreadyExistsException();
     }
 
     try {
@@ -58,7 +63,7 @@ export class DisciplineService {
     } catch (error) {
       switch (error.message) {
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -71,7 +76,7 @@ export class DisciplineService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      throw new HttpException('Verify the fields', 712, 400);
+      throw verifyTheFieldsException();
     }
 
     try {
@@ -79,10 +84,10 @@ export class DisciplineService {
     } catch (error) {
       switch (error.message) {
         case "Cannot read property 'description' of undefined":
-          throw new HttpException('Discipline not found', 901, 404);
+          throw disciplineNotFoundException();
 
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -94,10 +99,10 @@ export class DisciplineService {
       switch (error.message) {
         case "Cannot read property 'description' of undefined":
         case "Cannot read property 'discipline_guid' of undefined":
-          throw new HttpException('Discipline not found', 901, 404);
+          throw disciplineNotFoundException();
 
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };

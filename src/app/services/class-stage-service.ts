@@ -1,5 +1,8 @@
 import { ClassStage } from '@database/accessors';
-import { HttpException } from '@exceptions/index';
+import { classStageNotFound } from '@exceptions/class-stage';
+import { classStageAlreadyExistsException } from '@exceptions/class-stage/class-stage-already-exists';
+import { HttpException, unkownException } from '@exceptions/index';
+import { verifyTheFieldsException } from '@exceptions/schema';
 import { ClassStageInsertPayload, ClassStageUpdatePayload } from '@models/requests/class-stage';
 import Joi from 'joi';
 
@@ -14,7 +17,7 @@ export class ClassStageService {
     } catch (error) {
       switch (error.message) {
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -27,13 +30,13 @@ export class ClassStageService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      throw new HttpException('Verify the fields', 712, 400);
+      throw verifyTheFieldsException();
     }
 
     const classStage = await this.classStage.insertClassStage(this.returningFields, payload);
 
     if (!classStage) {
-      throw new HttpException('Class stage already exists', 625, 409);
+      throw classStageAlreadyExistsException();
     }
 
     return classStage;
@@ -48,9 +51,9 @@ export class ClassStageService {
     } catch (error) {
       switch (error.message) {
         case "Cannot read property 'description' of undefined":
-          throw new HttpException('Class stage not found', 901, 404);
+          throw classStageNotFound();
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -63,13 +66,13 @@ export class ClassStageService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      throw new HttpException('Verify the fields', 712, 400);
+      throw verifyTheFieldsException();
     }
 
     const existingClassStage = await this.classStage.verifyExistingClassStage(payload.description);
 
     if (existingClassStage) {
-      throw new HttpException('Class stage already exists', 625, 409);
+      throw classStageAlreadyExistsException();
     }
 
     try {
@@ -81,9 +84,9 @@ export class ClassStageService {
     } catch (error) {
       switch (error.message) {
         case "Cannot read property 'description' of undefined":
-          throw new HttpException('Class stage not found', 901, 404);
+          throw classStageNotFound();
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -95,7 +98,7 @@ export class ClassStageService {
     );
 
     if (!deletedClassStage) {
-      throw new HttpException('Class stage not found', 901, 404);
+      throw classStageNotFound();
     }
 
     return deletedClassStage;

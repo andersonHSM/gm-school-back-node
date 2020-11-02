@@ -1,5 +1,6 @@
 import { Role, User } from '@database/accessors';
 import { HttpException } from '@exceptions/index';
+import { userNotFoundException } from '@exceptions/user-exceptions/';
 import { RoleModel } from '@models/entities';
 import { RolesEnum } from '@models/enums';
 import { AuthenticatedRequest } from '@models/requests/auth';
@@ -42,7 +43,7 @@ export class RoleMiddlewares {
     const [authenticatedUserRole, paramUserRole] = await Promise.all(rolesPromise);
 
     if (!authenticatedUserRole || !paramUserRole) {
-      const exception = new HttpException('User not found', 704, 404);
+      const exception = userNotFoundException();
 
       return res.status(exception.statusCode).json(exception.format());
     }

@@ -1,5 +1,8 @@
 import { Address } from '@database/accessors';
+import { unkownException } from '@exceptions/index';
+import { addressNotFoundException } from '@exceptions/address-exceptions';
 import { HttpException } from '@exceptions/http-exception';
+import { verifyTheFieldsException } from '@exceptions/schema';
 import { AddressModel } from '@models/entities';
 import { AddressUpdatePayload } from '@models/requests/address';
 import Joi from 'joi';
@@ -25,7 +28,7 @@ class AddressService {
       switch (error.message) {
         case "Cannot read property 'address_guid' of undefined":
         default:
-          throw new HttpException('Address not found', 801, 404);
+          throw addressNotFoundException();
       }
     }
   };
@@ -50,7 +53,7 @@ class AddressService {
       await schema.validateAsync(payload);
     } catch (error) {
       if (error instanceof Joi.ValidationError) {
-        throw new HttpException('Verify the fields', 712, 400);
+        throw verifyTheFieldsException();
       }
     }
 
@@ -73,7 +76,7 @@ class AddressService {
       await schema.validateAsync(payload);
     } catch (error) {
       if (error instanceof Joi.ValidationError) {
-        throw new HttpException('Verify the fields', 712, 400);
+        throw verifyTheFieldsException();
       }
     }
 
@@ -83,7 +86,7 @@ class AddressService {
       switch (error.message) {
         case "Cannot read property 'address_guid' of undefined":
         default:
-          throw new HttpException('Address not found', 801, 404);
+          throw addressNotFoundException();
       }
     }
   };
@@ -92,7 +95,10 @@ class AddressService {
     try {
       await this.address.deleteAddress(address_guid);
     } catch (error) {
-      throw new HttpException(error.message, 600, 400);
+      switch (error.message) {
+        default:
+          throw unkownException(error.message);
+      }
     }
   };
 }

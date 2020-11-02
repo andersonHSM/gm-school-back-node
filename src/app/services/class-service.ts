@@ -1,5 +1,7 @@
 import { Class, Discipline } from '@database/accessors';
-import { HttpException } from '@exceptions/index';
+import { classNotFoundException, invalidClassPayloadException } from '@exceptions/class-exceptions';
+import { disciplineNotFoundException } from '@exceptions/discipline-exceptions';
+import { HttpException, unkownException } from '@exceptions/index';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
@@ -31,7 +33,7 @@ export class ClassService {
       switch (error.message) {
         case "Cannot read property 'class_guid' of undefined":
         default:
-          throw new HttpException(`Class not found`, 602, 404);
+          throw classNotFoundException();
       }
     }
   };
@@ -51,7 +53,7 @@ export class ClassService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      throw new HttpException('Invalid class payload', 501, 400);
+      throw invalidClassPayloadException();
     }
 
     return await this.classEntity.insertClass(payload, this.returningFields);
@@ -68,7 +70,7 @@ export class ClassService {
     try {
       await schema.validateAsync(payload);
     } catch (error) {
-      throw new HttpException('Invalid class payload', 501, 400);
+      throw invalidClassPayloadException();
     }
 
     try {
@@ -77,7 +79,7 @@ export class ClassService {
       switch (error.message) {
         case "Cannot read property 'class_guid' of undefined":
         default:
-          throw new HttpException(`Class not found`, 602, 404);
+          throw classNotFoundException();
       }
     }
   };
@@ -89,7 +91,7 @@ export class ClassService {
       switch (error.message) {
         case "Cannot read property 'class_guid' of undefined":
         default:
-          throw new HttpException(`Class not found`, 602, 404);
+          throw classNotFoundException();
       }
     }
   };
@@ -101,7 +103,7 @@ export class ClassService {
     const existingClass = await this.classEntity.verifyExistingClass(class_guid);
 
     if (!existingClass) {
-      throw new HttpException('Class not found', 602, 404);
+      throw classNotFoundException();
     }
 
     let finalPayload: any[] = [];
@@ -130,7 +132,7 @@ export class ClassService {
     } catch (error) {
       switch (error.message) {
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -142,9 +144,9 @@ export class ClassService {
     ]);
 
     if (!existingClass) {
-      throw new HttpException(`Class not found`, 602, 404);
+      throw classNotFoundException();
     } else if (!existingDiscipline) {
-      throw new HttpException('Discipline not found', 901, 404);
+      throw disciplineNotFoundException();
     }
 
     try {
@@ -156,7 +158,7 @@ export class ClassService {
     } catch (error) {
       switch (error.message) {
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };
@@ -165,7 +167,7 @@ export class ClassService {
     const existingClass = await this.classEntity.verifyExistingClass(class_guid);
 
     if (!existingClass) {
-      throw new HttpException(`Class not found`, 602, 404);
+      throw classNotFoundException();
     }
 
     try {
@@ -176,7 +178,7 @@ export class ClassService {
     } catch (error) {
       switch (error.message) {
         default:
-          throw new HttpException(error.message, 999, 500);
+          throw unkownException(error.message);
       }
     }
   };

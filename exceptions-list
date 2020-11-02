@@ -1,0 +1,41 @@
+exceptions
+
+class - 6xx
+
+601 - Class not found
+602 - Invalid class payload
+
+user - 7xx
+
+701 - User not found
+702 - User personal data must be provided
+703 - User already exists with provided e-mail
+704 - User must have a valid address to be updated
+705 - Invalid email or password
+706 - E-mail or password not provided
+
+address - 8xx
+
+801 - Address not found
+802 - Invalid address payload
+
+schema - 901 - 998
+
+901 - Verify the fields
+
+unknown - 999
+
+discipline - 10xx
+
+1001 - Discipline not found
+1002 - Discipline already exists
+
+class-stage - 11xx
+
+1101 - Class stage not found
+1102 - Class stage already exists
+
+auth - 12xx
+
+1201 - Invaid token provided
+1202 - A token must me provided

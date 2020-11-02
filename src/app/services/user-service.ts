@@ -1,5 +1,10 @@
 import { Address, PersonalData, Role, User } from '@database/accessors';
+import { addressNotFoundException } from '@exceptions/address-exceptions';
 import { HttpException } from '@exceptions/index';
+import {
+  userMustHaveValidAddressToUpdate,
+  userNotFoundException,
+} from '@exceptions/user-exceptions/';
 import { UserModel, AddressModel } from '@models/entities';
 import { UserPatchRequestPayload } from '@models/requests/user';
 
@@ -25,7 +30,7 @@ class UserService {
       switch (error.message) {
         case "Cannot read property 'user_guid' of undefined":
         default:
-          throw new HttpException(`User not found`, 704, 404);
+          throw userNotFoundException();
       }
     }
   };
@@ -58,7 +63,7 @@ class UserService {
       let address: AddressModel | undefined;
 
       if (addressPayload && !address_guid) {
-        throw new HttpException('User must have a valid address to be updated', 709, 404);
+        throw userMustHaveValidAddressToUpdate();
       }
 
       address =
@@ -89,10 +94,10 @@ class UserService {
     } catch (error) {
       switch (error.message) {
         case "Cannot read property 'address_guid' of undefined":
-          throw new HttpException('Address not found', 602, 404);
+          throw addressNotFoundException();
         case "Cannot read property 'user_guid' of undefined":
         default:
-          throw new HttpException(`User not found`, 704, 404);
+          throw userNotFoundException();
       }
     }
   };

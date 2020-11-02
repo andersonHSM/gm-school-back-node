@@ -1,3 +1,4 @@
+import { classNotFoundException } from '@exceptions/class-exceptions';
 import { HttpException } from '@exceptions/index';
 import { BaseController } from '@models/index';
 import { AuthenticatedRequest } from '@models/requests/auth';
@@ -47,7 +48,7 @@ export class ClassController implements BaseController {
       const classReturn = await this.classService.deleteClass(class_guid);
 
       if (!classReturn) {
-        throw new HttpException('Class not found', 602, 404);
+        throw classNotFoundException();
       }
 
       return res.status(200).json();

@@ -6,6 +6,14 @@ import { EnvConfig } from '@models/index';
 import { HttpException } from '@exceptions/index';
 import { AddressModel, UserModel, PersonalDataModel } from '@models/entities';
 import { Address, PersonalData, Role, User } from '@database/accessors';
+import {
+  emailOrPasswordNotProvidedException,
+  invalidEmailOrPasswordException,
+  userExistsWithProvidedEmailException,
+  userNotFoundException,
+  userPersonalDataNotProvidedException,
+} from '@exceptions/user-exceptions/';
+import { invalidAddressPayloadException } from '@exceptions/address-exceptions';
 
 class AuthService {
   constructor(
@@ -43,11 +51,11 @@ class AuthService {
     );
 
     if (!signUpRequest.personal_data) {
-      throw new HttpException('User personal data must be provided', 711, 400);
+      throw userPersonalDataNotProvidedException();
     }
 
     if (existingUser) {
-      throw new HttpException('A user already exists with supplied e-mail', 701, 400);
+      throw userExistsWithProvidedEmailException();
     }
 
     const { role, address: addressPayload, ...remainingSignupRequest } = signUpRequest;
@@ -77,7 +85,7 @@ class AuthService {
 
         address = { address_guid, ...addressQueryReturn };
       } catch (error) {
-        throw new HttpException('Invalid address payload', 710, 400);
+        throw invalidAddressPayloadException();
       }
     }
 
@@ -109,7 +117,7 @@ class AuthService {
       switch (error.message) {
         case "Cannot read property 'user_guid' of undefined":
         default:
-          throw new HttpException(`User not found`, 704, 404);
+          throw userNotFoundException();
       }
     }
   };
@@ -123,7 +131,7 @@ class AuthService {
     const { email, password } = loginRequest;
 
     if (!email || !password) {
-      throw new HttpException('E-mail or password not provided', 702, 400);
+      throw emailOrPasswordNotProvidedException();
     }
 
     try {
@@ -135,7 +143,7 @@ class AuthService {
       ]);
 
       if (!user && isLogin) {
-        throw new HttpException('User not found', 704, 404);
+        throw userNotFoundException();
       } else if (!user && !isLogin) {
         return null;
       }
@@ -145,7 +153,7 @@ class AuthService {
       const isPasswordValid = await bcrypt.compare(password, passwordHashToCheckup);
 
       if (!isPasswordValid) {
-        throw new HttpException('Invalid e-mail or password', 703, 422);
+        throw invalidEmailOrPasswordException();
       }
 
       const { user_guid } = user;

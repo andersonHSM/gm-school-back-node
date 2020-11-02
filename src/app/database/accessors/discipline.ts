@@ -1,7 +1,7 @@
 import Knex from 'knex';
 import { DisciplineModel } from '@models/entities';
 import { DisciplineInsertPayload, DisciplineUpdatePayload } from '@models/requests/discipline';
-import { stringify as uuidStringify, parse as uuidParse, v4 as uuidv4 } from 'uuid';
+import { stringify as uuidStringfy, parse as uuidParse, v4 as uuidv4 } from 'uuid';
 
 export class Discipline {
   constructor(private readonly knex: Knex) {}
@@ -12,7 +12,7 @@ export class Discipline {
       .whereNull('deleted_at');
 
     disciplines = disciplines.map(discipline => {
-      const discipline_guid = uuidStringify(discipline.discipline_guid as ArrayLike<number>);
+      const discipline_guid = uuidStringfy(discipline.discipline_guid as ArrayLike<number>);
 
       return { ...discipline, discipline_guid };
     });
@@ -24,8 +24,7 @@ export class Discipline {
     discipline_guid: string | ArrayLike<number>,
     returningFields: string[]
   ) => {
-    const binaryDisciplineGuid =
-      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+    const binaryDisciplineGuid = this.verifyUuid(discipline_guid);
 
     const { description, ...remaining }: DisciplineModel = await this.knex('discipline')
       .select([...returningFields, 'discipline.discipline_guid'])
@@ -53,8 +52,7 @@ export class Discipline {
     returningFields: string[],
     payload: DisciplineUpdatePayload
   ) => {
-    const binaryDisciplineGuid =
-      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+    const binaryDisciplineGuid = this.verifyUuid(discipline_guid);
 
     const [
       { description, discipline_guid: queryDisciplineGuid },
@@ -64,14 +62,13 @@ export class Discipline {
       .returning([...returningFields, 'discipline_guid']);
 
     return {
-      discipline_guid: uuidStringify(queryDisciplineGuid as ArrayLike<number>),
+      discipline_guid: uuidStringfy(queryDisciplineGuid as ArrayLike<number>),
       description,
     };
   };
 
   deleteDiscipline = async (discipline_guid: string | ArrayLike<number>) => {
-    const binaryDisciplineGuid =
-      typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+    const binaryDisciplineGuid = this.verifyUuid(discipline_guid);
 
     const [{ discipline_guid: queryDisciplineGuid }]: {
       discipline_guid: ArrayLike<number>;
@@ -80,6 +77,42 @@ export class Discipline {
       .update('deleted_at', this.knex.fn.now())
       .returning(['discipline_guid']);
 
-    return { discipline_guid: uuidStringify(queryDisciplineGuid) };
+    return { discipline_guid: uuidStringfy(queryDisciplineGuid) };
+  };
+
+  private verifyUuid = (discipline_guid: string | ArrayLike<number>) => {
+    return typeof discipline_guid === 'string' ? uuidParse(discipline_guid) : discipline_guid;
+  };
+
+  verifyExistingDiscipline = async (
+    discipline_guid?: string,
+    description: string | null = null
+  ): Promise<DisciplineModel> => {
+    const binaryGuid = discipline_guid ? this.verifyUuid(discipline_guid) : null;
+
+    return await this.knex('discipline')
+      .where({ discipline_guid: binaryGuid })
+      .orWhere({ description })
+      .whereNull('deleted_at')
+      .select(['*'])
+      .first();
+  };
+
+  getDisciplineByClassGuid = async (class_guid: string) => {
+    const binaryGuid = this.verifyUuid(class_guid);
+
+    const disciplines = (
+      await this.knex('discipline')
+        .where('class_has_discipline.class_guid', binaryGuid)
+        .whereNull('discipline.deleted_at')
+        .select(['discipline.description', 'discipline.discipline_guid'])
+        .join('class_has_discipline', function () {
+          this.on('class_has_discipline.discipline_guid', '=', 'discipline.discipline_guid');
+        })
+    ).map(({ description, discipline_guid }) => {
+      return { discipline_guid: uuidStringfy(discipline_guid), description };
+    });
+
+    return disciplines;
   };
 }

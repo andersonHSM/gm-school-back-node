@@ -79,8 +79,6 @@ export class ClassStage {
       .update('deleted_at', null)
       .returning([...returningFields, 'deleted_at']);
 
-    console.log(deletedClassStage);
-
     return deletedClassStage;
   };
 

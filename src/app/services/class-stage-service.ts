@@ -67,7 +67,6 @@ export class ClassStageService {
     }
 
     const existingClassStage = await this.classStage.verifyExistingClassStage(payload.description);
-    console.log(existingClassStage);
 
     if (existingClassStage) {
       throw new HttpException('Class stage already exists', 625, 409);

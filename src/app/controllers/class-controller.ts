@@ -1,7 +1,11 @@
 import { HttpException } from '@exceptions/index';
 import { BaseController } from '@models/index';
 import { AuthenticatedRequest } from '@models/requests/auth';
-import { ClassInsertPayload, ClassUpdatePayload } from '@models/requests/class';
+import {
+  ClassInsertPayload,
+  ClassUpdatePayload,
+  SetDisciplinesToClassRequestPayload,
+} from '@models/requests/class';
 import { ClassService } from '@services/index';
 import { Request, Response } from 'express';
 
@@ -82,6 +86,65 @@ export class ClassController implements BaseController {
       const classReturn = await this.classService.getClass(class_guid);
 
       return res.status(200).json(classReturn);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  setDisciplinesToClass = async (
+    req: Request<{ class_guid: string }, null, SetDisciplinesToClassRequestPayload>,
+    res: Response
+  ) => {
+    const { class_guid } = req.params;
+    const { body: payload } = req;
+
+    try {
+      const classReturn = await this.classService.setDisciplinesToClass(class_guid, payload);
+
+      return res.status(200).json(classReturn);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  unsetDisciplineToClass = async (
+    req: Request<{ class_guid: string; discipline_guid: string }>,
+    res: Response
+  ) => {
+    const { class_guid, discipline_guid } = req.params;
+
+    try {
+      const unsetReturn = await this.classService.unsetDisciplineToClass(
+        class_guid,
+        discipline_guid
+      );
+
+      return res.status(200).json(unsetReturn);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  getActiveClassWithDisciplines = async (req: Request<{ class_guid: string }>, res: Response) => {
+    const { class_guid } = req.params;
+    try {
+      const classWithDisciplines = await this.classService.getActiveClassWithDisciplines(
+        class_guid
+      );
+
+      return res.status(200).json(classWithDisciplines);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());

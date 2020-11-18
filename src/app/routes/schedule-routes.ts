@@ -10,10 +10,13 @@ export const scheduleRoutes = (roleMiddlewares: RoleMiddlewares) => {
 
   const { isAdmin } = roleMiddlewares;
   const scheduleService = new ScheduleService(new Schedule(KnexInstance));
-  const { store, index } = new ScheduleController(scheduleService);
+  const { store, index, delete: deleteFn } = new ScheduleController(scheduleService);
 
   router.get('/', (isAdmin as unknown) as Handler, index);
+
   router.post('/', (isAdmin as unknown) as Handler, (store as unknown) as Handler);
+
+  router.delete('/:schedule_guid', (isAdmin as unknown) as Handler, deleteFn);
 
   return router;
 };

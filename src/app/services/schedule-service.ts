@@ -1,5 +1,8 @@
 import { Schedule } from '@database/accessors';
-import { scheduleAlreadyExistsException } from '@exceptions/schedule-exceptions';
+import {
+  scheduleAlreadyExistsException,
+  scheduleNotFoundException,
+} from '@exceptions/schedule-exceptions';
 import { ScheduleInsertPayload } from '@models/requests/schedule';
 
 export class ScheduleService {
@@ -46,5 +49,15 @@ export class ScheduleService {
 
   getAllActiveSchedules = async () => {
     return await this.schedule.getAllActiveSchedules(this.scheduleReturningFields);
+  };
+
+  deleteSchedule = async (schedule_guid: string) => {
+    const deletedSchedule = await this.schedule.deleteSchedule(schedule_guid);
+
+    if (!deletedSchedule) {
+      throw scheduleNotFoundException();
+    }
+
+    return deletedSchedule;
   };
 }

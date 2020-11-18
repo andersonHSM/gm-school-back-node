@@ -21,7 +21,7 @@ export class ScheduleController implements BaseController {
     const { body: payload } = req;
 
     try {
-      return res.status(200).json(await this.scheduleService.insertSchedule(payload));
+      return res.status(201).json(await this.scheduleService.insertSchedule(payload));
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
@@ -30,9 +30,20 @@ export class ScheduleController implements BaseController {
       return res.status(500).json(error.message);
     }
   };
-  delete(...args: any[]) {
-    throw new Error('Method not implemented.');
-  }
+  delete = async (req: Request<{ schedule_guid: string }>, res: Response) => {
+    const { schedule_guid } = req.params;
+
+    try {
+      await this.scheduleService.deleteSchedule(schedule_guid);
+      return res.status(200).json();
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json(error.message);
+    }
+  };
   update(...args: any[]) {
     throw new Error('Method not implemented.');
   }

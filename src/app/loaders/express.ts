@@ -41,7 +41,7 @@ export default async (app: express.Application) => {
 
   app.use('/class-stage/', classStageRoutes(roleMiddlewares));
 
-  app.use('/schedule/', scheduleRoutes(roleMiddlewares));
+  app.use('/schedules/', scheduleRoutes(roleMiddlewares));
 
   return app;
 };

@@ -74,6 +74,15 @@ export class Schedule {
       ...data,
     }));
   };
+
+  deleteSchedule = async (schedule_guid: string) => {
+    const [deletedSchedule]: ScheduleModel[] = await this.knex('schedule')
+      .where('schedule_guid', uuidParse(schedule_guid))
+      .update('deleted_at', this.knex.fn.now())
+      .returning('*');
+
+    return deletedSchedule;
+  };
   /*  
 
 

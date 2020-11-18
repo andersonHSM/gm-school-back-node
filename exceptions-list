@@ -42,3 +42,4 @@ auth - 12xx
 
 schedule - 13xx
 1301 - This schedule already exists
+1302 - Schedule not found

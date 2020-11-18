@@ -39,3 +39,6 @@ auth - 12xx
 
 1201 - Invaid token provided
 1202 - A token must me provided
+
+schedule - 13xx
+1301 - This schedule already exists

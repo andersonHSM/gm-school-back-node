@@ -5,3 +5,4 @@ export { AddressModel } from './address-model';
 export { ClassModel } from './class-model';
 export { DisciplineModel } from './discipline-model';
 export { ClassStageModel } from './class-stage-model';
+export { ScheduleModel } from './schedule-model';

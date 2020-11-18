@@ -8,6 +8,7 @@ import {
   classStageRoutes,
   disciplineRoutes,
   userRoutes,
+  scheduleRoutes,
 } from '@routes/index';
 import { JwtService } from '@services/index';
 import { EnviromentConfig, KnexInstance } from '@config/index';
@@ -39,6 +40,8 @@ export default async (app: express.Application) => {
   app.use('/disciplines/', disciplineRoutes(roleMiddlewares));
 
   app.use('/class-stage/', classStageRoutes(roleMiddlewares));
+
+  app.use('/schedule/', scheduleRoutes(roleMiddlewares));
 
   return app;
 };

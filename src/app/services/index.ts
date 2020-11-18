@@ -5,3 +5,4 @@ export { AddressService } from './address-service';
 export { ClassService } from './class-service';
 export { DisciplineService } from './discipline-service';
 export { ClassStageService } from './class-stage-service';
+export { ScheduleService } from './schedule-service';

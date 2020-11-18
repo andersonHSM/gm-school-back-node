@@ -43,4 +43,8 @@ export class ScheduleService {
 
     return await this.schedule.insertSchedule(this.scheduleReturningFields, payload);
   };
+
+  getAllActiveSchedules = async () => {
+    return await this.schedule.getAllActiveSchedules(this.scheduleReturningFields);
+  };
 }

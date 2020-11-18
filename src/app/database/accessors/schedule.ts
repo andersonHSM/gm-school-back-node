@@ -1,4 +1,5 @@
 import { KnexInstance } from '@config/index';
+import { scheduleAlreadyExistsException } from '@exceptions/schedule-exceptions';
 import { ScheduleModel } from '@models/entities';
 import { ScheduleInsertPayload } from '@models/requests/schedule';
 import { query } from 'express';
@@ -58,6 +59,20 @@ export class Schedule {
       .first();
 
     return schedule;
+  };
+
+  getAllActiveSchedules = async (returningFields: string[]) => {
+    const schedules: ScheduleModel[] = await this.knex('schedule')
+      .select(returningFields)
+      .whereNull('deleted_at')
+      .orderBy([{ column: 'week_day', order: 'asc' }, 'begin_time']);
+
+    console.log('schedules');
+
+    return schedules.map(({ schedule_guid, ...data }) => ({
+      schedule_guid: uuidStringify(schedule_guid as ArrayLike<number>),
+      ...data,
+    }));
   };
   /*  
 

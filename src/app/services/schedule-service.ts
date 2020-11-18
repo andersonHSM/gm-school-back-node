@@ -37,12 +37,6 @@ export class ScheduleService {
       ),
     ]);
 
-    console.log({
-      existingExactlySchedule,
-      conflictingScheduleByBeginTime,
-      conflictingScheduleByEndTime,
-    });
-
     if (existingExactlySchedule || conflictingScheduleByBeginTime || conflictingScheduleByEndTime) {
       throw scheduleAlreadyExistsException();
     }

@@ -37,7 +37,6 @@ export class Schedule {
     begin_time: string,
     end_time: string
   ) => {
-    console.log({ begin_time, end_time });
     const schedule: ScheduleModel = await this.knex('schedule')
       .where({ week_day })
       .where('begin_time', '>=', begin_time)

@@ -45,10 +45,20 @@
     "baseUrl": "." /* Base directory to resolve non-absolute module names. */,
     "paths": {
       "@config/*": ["src/app/config/*"],
+      "@config/": ["src/app/config"],
+
       "@loaders/*": ["src/app/loaders/*"],
+      "@loaders/": ["src/app/loaders"],
+
       "@models/*": ["src/app/models/*"],
+      "@models/": ["src/app/models"],
+
       "@controllers/*": ["src/app/controllers/*"],
+      "@controllers/": ["src/app/controllers"],
+
       "@routes/*": ["src/app/routes/*"],
+      "@routes/": ["src/app/routes"],
+
       "@services/*": ["src/app/services/*"],
       "@middlewares/*": ["src/app/middlewares/*"],
       "@exceptions/*": ["src/app/exceptions/*"],

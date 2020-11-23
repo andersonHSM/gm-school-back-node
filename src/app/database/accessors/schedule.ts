@@ -1,7 +1,7 @@
 import { KnexInstance } from '@config/index';
 import { scheduleAlreadyExistsException } from '@exceptions/schedule-exceptions';
 import { ScheduleModel } from '@models/entities';
-import { ScheduleInsertPayload } from '@models/requests/schedule';
+import { ScheduleInsertPayload, ScheduleUpdatePayload } from '@models/requests/schedule';
 import { query } from 'express';
 import Knex, { QueryBuilder } from 'knex';
 import { parse as uuidParse, stringify as uuidStringify, v4 as uuidv4 } from 'uuid';
@@ -25,7 +25,31 @@ export class Schedule {
     return { schedule_guid, ...remainingData };
   };
 
-  getExistingSchedule = async (week_day: number, begin_time: string, end_time: string) => {
+  updateSchedule = async (
+    schedule_guid: string,
+    returningFields: string[],
+    payload: ScheduleUpdatePayload
+  ) => {
+    const binaryGuid = uuidParse(schedule_guid);
+
+    const [schedule]: ScheduleModel[] = await this.knex('schedule')
+      .where('schedule_guid', binaryGuid)
+      .update(payload)
+      .returning(returningFields);
+
+    return { ...schedule, schedule_guid };
+  };
+
+  deleteSchedule = async (schedule_guid: string) => {
+    const [deletedSchedule]: ScheduleModel[] = await this.knex('schedule')
+      .where('schedule_guid', uuidParse(schedule_guid))
+      .update('deleted_at', this.knex.fn.now())
+      .returning('*');
+
+    return deletedSchedule;
+  };
+
+  getExistingSchedule = async (week_day: number | string, begin_time: string, end_time: string) => {
     const schedule: ScheduleModel = await this.knex('schedule')
       .where({ week_day, begin_time, end_time })
       .first();
@@ -34,7 +58,7 @@ export class Schedule {
   };
 
   getConflictingScheduleByBeginTime = async (
-    week_day: number,
+    week_day: number | string,
     begin_time: string,
     end_time: string
   ) => {
@@ -48,7 +72,7 @@ export class Schedule {
   };
 
   getConflictingScheduleByEndTime = async (
-    week_day: number,
+    week_day: number | string,
     begin_time: string,
     end_time: string
   ) => {
@@ -75,25 +99,16 @@ export class Schedule {
     }));
   };
 
-  deleteSchedule = async (schedule_guid: string) => {
-    const [deletedSchedule]: ScheduleModel[] = await this.knex('schedule')
-      .where('schedule_guid', uuidParse(schedule_guid))
-      .update('deleted_at', this.knex.fn.now())
-      .returning('*');
+  getScheduleByGuid = async (
+    schedule_guid: string,
+    returningFields: string[]
+  ): Promise<ScheduleModel | null> => {
+    const binaryGuid = uuidParse(schedule_guid);
 
-    return deletedSchedule;
+    return await this.knex('schedule')
+      .select(returningFields)
+      .where('schedule_guid', binaryGuid)
+      .whereNull('deleted_at')
+      .first();
   };
-  /*  
-
-
-  private insert = (schedule_guid: ArrayLike<number>, payload: ScheduleInsertPayload) => (
-    query: QueryBuilder
-  ) => query.insert<any>({ schedule_guid, ...payload });
-
-
-  private findConflictingBeginTime(week_day: number, begin_time: string, end_time: string) {
-    return function (query: QueryBuilder) {
-      return query.where({ week_day }).whereBetween('begin_time', [begin_time, end_time]);
-    };
-  } */
 }

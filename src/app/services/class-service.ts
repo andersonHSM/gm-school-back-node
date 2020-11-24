@@ -1,11 +1,17 @@
 import { Class, Discipline } from '@database/accessors';
-import { classNotFoundException, invalidClassPayloadException } from '@exceptions/class-exceptions';
+import {
+  classDisciplineAlredyWithScheduleException,
+  classNotFoundException,
+  invalidClassPayloadException,
+} from '@exceptions/class-exceptions';
 import { disciplineNotFoundException } from '@exceptions/discipline-exceptions';
 import { HttpException, unkownException } from '@exceptions/index';
+import { fieldMessageException } from '@exceptions/schema';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
   SetDisciplinesToClassRequestPayload,
+  SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
 import Joi from 'joi';
 
@@ -24,6 +30,12 @@ export class ClassService {
     'class_has_discipline.class_has_discipline_guid',
     'class_has_discipline.class_guid',
     'class_has_discipline.discipline_guid',
+  ];
+
+  private readonly classHasDisciplineHasScheduleReturningFields = [
+    'class_has_discipline_has_schedule.class_has_discipline_has_schedule_guid',
+    'class_has_discipline_has_schedule.class_has_discipline_guid',
+    'class_has_discipline_has_schedule.schedule_guid',
   ];
 
   getClass = async (class_guid: string) => {
@@ -181,5 +193,35 @@ export class ClassService {
           throw unkownException(error.message);
       }
     }
+  };
+
+  setScheduleToClassByDiscipline = async (payload: SetScheduleToClassByDisciplinePayload) => {
+    const schema = Joi.array().items({
+      class_has_discipline_guid: Joi.string().required(),
+      schedule_guid: Joi.string().required(),
+    });
+
+    try {
+      await schema.validateAsync(payload);
+    } catch (error) {
+      throw fieldMessageException(error.message);
+    }
+
+    const guid1 = payload.map(({ class_has_discipline_guid }) => class_has_discipline_guid);
+    const guid2 = payload.map(({ schedule_guid }) => schedule_guid);
+
+    const existingRelation = await this.classEntity.verifyExistingClassDisciplineSchedule(
+      guid1,
+      guid2
+    );
+
+    if (existingRelation.length > 0) {
+      throw classDisciplineAlredyWithScheduleException();
+    }
+
+    return await this.classEntity.setScheduleToClassByDiscipline(
+      this.classHasDisciplineHasScheduleReturningFields,
+      payload
+    );
   };
 }

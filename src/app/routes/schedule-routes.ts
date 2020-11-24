@@ -20,7 +20,7 @@ export const scheduleRoutes = (roleMiddlewares: RoleMiddlewares) => {
 
   router.patch('/:schedule_guid', (isAdmin as unknown) as Handler, update);
 
-  router.get('/:schedule_guid', (isAdmin as unknown) as Handler, show);
+  router.get('/:schedule_guid', show);
 
   return router;
 };

@@ -1,8 +1,8 @@
-import { ClassModel } from '@models/entities';
+import { ClassHasDisciplineHasScheduleModel, ClassModel } from '@models/entities';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
-  SetDisciplinesToClassRequestPayload,
+  SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
 import Knex from 'knex';
 import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';
@@ -146,6 +146,42 @@ export class Class {
     };
   };
 
+  setScheduleToClassByDiscipline = async (
+    returningFields: string[],
+    payload: SetScheduleToClassByDisciplinePayload
+  ) => {
+    const finalPayload = payload.map(({ class_has_discipline_guid, schedule_guid }) => {
+      const binaryClassHasDisciplineGuid = uuidParse(class_has_discipline_guid);
+      const binaryScheduleGuid = uuidParse(schedule_guid);
+      const class_has_discipline_has_schedule_guid = uuidParse(uuidv4());
+
+      return {
+        class_has_discipline_guid: binaryClassHasDisciplineGuid,
+        schedule_guid: binaryScheduleGuid,
+        class_has_discipline_has_schedule_guid,
+      };
+    });
+
+    const insertedSchedules: ClassHasDisciplineHasScheduleModel[] = await this.knex(
+      'class_has_discipline_has_schedule'
+    )
+      .insert(finalPayload)
+      .returning(returningFields);
+
+    return insertedSchedules.map(
+      ({ class_has_discipline_guid, class_has_discipline_has_schedule_guid, schedule_guid }) => {
+        console.log();
+        return {
+          class_has_discipline_has_schedule_guid: uuidStringfy(
+            class_has_discipline_has_schedule_guid as ArrayLike<number>
+          ),
+          class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
+          schedule_guid: uuidStringfy(schedule_guid as ArrayLike<number>),
+        };
+      }
+    );
+  };
+
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
     return typeof guid === 'string' ? uuidParse(guid) : guid;
   };
@@ -171,5 +207,17 @@ export class Class {
       .whereNull('deleted_at')
       .returning('*')
       .first();
+  };
+
+  verifyExistingClassDisciplineSchedule = async (
+    class_has_discipline_guids: string[],
+    schedule_guids: string[]
+  ) => {
+    const binaryClassHasDisciplineGuids = class_has_discipline_guids.map(guid => uuidParse(guid));
+    const binaryScheduleGuids = schedule_guids.map(guid => uuidParse(guid));
+
+    return await this.knex('class_has_discipline_has_schedule')
+      .whereIn('class_has_discipline_guid', binaryClassHasDisciplineGuids)
+      .whereIn('schedule_guid', binaryScheduleGuids);
   };
 }

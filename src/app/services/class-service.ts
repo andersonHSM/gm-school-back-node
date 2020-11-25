@@ -1,11 +1,11 @@
-import { Class, Discipline } from '@database/accessors';
+import { Class, Discipline, Schedule } from '@database/accessors';
 import {
   classDisciplineAlredyWithScheduleException,
   classNotFoundException,
   invalidClassPayloadException,
 } from '@exceptions/class-exceptions';
 import { disciplineNotFoundException } from '@exceptions/discipline-exceptions';
-import { HttpException, unkownException } from '@exceptions/index';
+import { unkownException } from '@exceptions/index';
 import { fieldMessageException } from '@exceptions/schema';
 import {
   ClassInsertPayload,
@@ -13,10 +13,16 @@ import {
   SetDisciplinesToClassRequestPayload,
   SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
+import { set as setDate } from 'date-fns';
 import Joi from 'joi';
+import { clone } from 'ramda';
 
 export class ClassService {
-  constructor(private readonly classEntity: Class, private readonly discipline: Discipline) {}
+  constructor(
+    private readonly classEntity: Class,
+    private readonly discipline: Discipline,
+    private readonly schedule: Schedule
+  ) {}
 
   private readonly returningFields = [
     'class.class_guid',
@@ -30,12 +36,21 @@ export class ClassService {
     'class_has_discipline.class_has_discipline_guid',
     'class_has_discipline.class_guid',
     'class_has_discipline.discipline_guid',
+    'class_has_discipline.workload',
+    'class_has_discipline.filled_workload',
   ];
 
   private readonly classHasDisciplineHasScheduleReturningFields = [
     'class_has_discipline_has_schedule.class_has_discipline_has_schedule_guid',
     'class_has_discipline_has_schedule.class_has_discipline_guid',
     'class_has_discipline_has_schedule.schedule_guid',
+  ];
+
+  private readonly scheduleReturningFields = [
+    'schedule.schedule_guid',
+    'schedule.week_day',
+    'schedule.begin_time',
+    'schedule.end_time',
   ];
 
   getClass = async (class_guid: string) => {
@@ -120,14 +135,14 @@ export class ClassService {
 
     let finalPayload: any[] = [];
 
-    for (const { discipline_guid } of payload) {
+    for (const { discipline_guid, workload } of payload) {
       const [existingDiscipline, existingClassDiscipline] = await Promise.all([
         this.discipline.verifyExistingDiscipline(discipline_guid as string),
         this.classEntity.verifyExistingClassDiscipline(class_guid, discipline_guid as string),
       ]);
 
       if (!existingClassDiscipline && existingDiscipline) {
-        finalPayload = finalPayload.concat({ discipline_guid });
+        finalPayload = finalPayload.concat({ discipline_guid, workload });
       }
     }
 
@@ -198,7 +213,7 @@ export class ClassService {
   setScheduleToClassByDiscipline = async (payload: SetScheduleToClassByDisciplinePayload) => {
     const schema = Joi.array().items({
       class_has_discipline_guid: Joi.string().required(),
-      schedule_guid: Joi.string().required(),
+      schedule_guids: Joi.array().items(Joi.string()).required(),
     });
 
     try {
@@ -207,21 +222,89 @@ export class ClassService {
       throw fieldMessageException(error.message);
     }
 
-    const guid1 = payload.map(({ class_has_discipline_guid }) => class_has_discipline_guid);
-    const guid2 = payload.map(({ schedule_guid }) => schedule_guid);
+    console.log(payload[0].schedule_guids);
 
-    const existingRelation = await this.classEntity.verifyExistingClassDisciplineSchedule(
-      guid1,
-      guid2
-    );
+    const removedDuplicateds = this.removeDuplicatedSchedule(payload);
 
-    if (existingRelation.length > 0) {
-      throw classDisciplineAlredyWithScheduleException();
-    }
+    console.log(removedDuplicateds[0].schedule_guids);
+    await this.calculateSchedulesDates(removedDuplicateds);
+
+    return;
+
+    await this.verifyExistingSchedulesByClassDiscipline(removedDuplicateds);
 
     return await this.classEntity.setScheduleToClassByDiscipline(
       this.classHasDisciplineHasScheduleReturningFields,
-      payload
+      removedDuplicateds
     );
+  };
+
+  private removeDuplicatedSchedule = (arr: SetScheduleToClassByDisciplinePayload) => {
+    return arr.reduce((acc, current) => {
+      const existingValue = acc.find(
+        item => item.class_has_discipline_guid === current.class_has_discipline_guid
+      );
+
+      if (!existingValue) {
+        const { class_has_discipline_guid, schedule_guids } = current;
+
+        return acc.concat({
+          class_has_discipline_guid,
+          schedule_guids: Array.from(new Set(schedule_guids)),
+        });
+      } else {
+        return acc;
+      }
+    }, [] as SetScheduleToClassByDisciplinePayload);
+  };
+
+  private verifyExistingSchedulesByClassDiscipline = async (
+    arr: SetScheduleToClassByDisciplinePayload
+  ) => {
+    const guid1 = arr.map(({ class_has_discipline_guid }) => class_has_discipline_guid);
+    const guid2 = arr.map(({ schedule_guids }) => schedule_guids);
+
+    let relations: any[] = [];
+
+    for (const scheduleguid of guid2) {
+      const existingRelation = await this.classEntity.verifyExistingClassDisciplineSchedule(
+        guid1,
+        scheduleguid
+      );
+
+      relations = relations.concat(existingRelation);
+    }
+
+    if (relations.length > 0) {
+      throw classDisciplineAlredyWithScheduleException();
+    }
+  };
+
+  private calculateSchedulesDates = async (arr: SetScheduleToClassByDisciplinePayload) => {
+    // TODO - create table to store this data, wich represents the beginning of the school year
+    const startTime = setDate(Date.now(), { month: 0, date: 20 });
+    const endTime = setDate(Date.now(), { month: 10, date: 20 });
+
+    console.log({ startTime, endTime });
+
+    for (const { class_has_discipline_guid, schedule_guids } of arr) {
+      const classHasDiscipline = await this.classEntity.getClassHasDisciplineByGuid(
+        class_has_discipline_guid,
+        this.classHasDisciplineReturningFields
+      );
+
+      const schedules = await this.schedule.getSchedulesByGuidsInterval(
+        schedule_guids,
+        this.scheduleReturningFields
+      );
+
+      if (schedules.length === 0 || !classHasDiscipline) {
+        return;
+      }
+
+      const scheduleStartTime = clone(startTime);
+
+      console.log({ schedules, classHasDiscipline });
+    }
   };
 }

@@ -1,6 +1,6 @@
 import { KnexInstance } from '@config/index';
 import { ClassController } from '@controllers/index';
-import { Class, Discipline } from '@database/accessors';
+import { Class, Discipline, Schedule } from '@database/accessors';
 import { RoleMiddlewares } from '@middlewares/index';
 import { ClassService } from '@services/index';
 import { Handler, Router } from 'express';
@@ -9,7 +9,11 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   const router = Router();
 
   const { isAdmin } = roleMiddlewares;
-  const classService = new ClassService(new Class(KnexInstance), new Discipline(KnexInstance));
+  const classService = new ClassService(
+    new Class(KnexInstance),
+    new Discipline(KnexInstance),
+    new Schedule(KnexInstance)
+  );
 
   const {
     index,

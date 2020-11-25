@@ -1,7 +1,12 @@
-import { ClassHasDisciplineHasScheduleModel, ClassModel } from '@models/entities';
+import {
+  ClassHasDisciplineHasScheduleModel,
+  ClassHasDisciplineModel,
+  ClassModel,
+} from '@models/entities';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
+  SetDisciplinesToClassRequestPayload,
   SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
 import Knex from 'knex';
@@ -11,6 +16,8 @@ type finalSetDisciplineToClassPayload = {
   class_has_discipline_guid: string | ArrayLike<number>;
   class_guid: string | ArrayLike<number>;
   discipline_guid: string | ArrayLike<number>;
+  workload: number;
+  filled_workload: number;
 }[];
 
 export class Class {
@@ -103,26 +110,34 @@ export class Class {
     };
   };
 
-  setDisciplinesToClass = async (class_guid: string, returningFields: string[], payload: any[]) => {
+  setDisciplinesToClass = async (
+    class_guid: string,
+    returningFields: string[],
+    payload: SetDisciplinesToClassRequestPayload
+  ) => {
     const binaryClassGuid = this.verifyUuid(class_guid);
 
-    const finalPayload = payload.map(({ discipline_guid }) => ({
+    const finalPayload = payload.map(({ discipline_guid, workload }) => ({
       discipline_guid: this.verifyUuid(discipline_guid as string),
       class_guid: binaryClassGuid,
       class_has_discipline_guid: uuidParse(uuidv4()),
+      workload,
     }));
 
     const queryReturn: finalSetDisciplineToClassPayload = await this.knex('class_has_discipline')
       .insert(finalPayload)
       .returning(returningFields);
 
-    return queryReturn.map(({ class_guid, discipline_guid, class_has_discipline_guid }) => {
-      return {
-        class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
-        class_guid: uuidStringfy(class_guid as ArrayLike<number>),
-        discipline_guid: uuidStringfy(discipline_guid as ArrayLike<number>),
-      };
-    });
+    return queryReturn.map(
+      ({ class_guid, discipline_guid, class_has_discipline_guid, ...remaining }) => {
+        return {
+          class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
+          class_guid: uuidStringfy(class_guid as ArrayLike<number>),
+          discipline_guid: uuidStringfy(discipline_guid as ArrayLike<number>),
+          ...remaining,
+        };
+      }
+    );
   };
 
   unsetDisciplineToClass = async (
@@ -150,36 +165,33 @@ export class Class {
     returningFields: string[],
     payload: SetScheduleToClassByDisciplinePayload
   ) => {
-    const finalPayload = payload.map(({ class_has_discipline_guid, schedule_guid }) => {
-      const binaryClassHasDisciplineGuid = uuidParse(class_has_discipline_guid);
-      const binaryScheduleGuid = uuidParse(schedule_guid);
-      const class_has_discipline_has_schedule_guid = uuidParse(uuidv4());
-
-      return {
-        class_has_discipline_guid: binaryClassHasDisciplineGuid,
-        schedule_guid: binaryScheduleGuid,
-        class_has_discipline_has_schedule_guid,
-      };
-    });
-
-    const insertedSchedules: ClassHasDisciplineHasScheduleModel[] = await this.knex(
-      'class_has_discipline_has_schedule'
-    )
-      .insert(finalPayload)
-      .returning(returningFields);
-
-    return insertedSchedules.map(
-      ({ class_has_discipline_guid, class_has_discipline_has_schedule_guid, schedule_guid }) => {
-        console.log();
-        return {
-          class_has_discipline_has_schedule_guid: uuidStringfy(
-            class_has_discipline_has_schedule_guid as ArrayLike<number>
-          ),
-          class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
-          schedule_guid: uuidStringfy(schedule_guid as ArrayLike<number>),
-        };
-      }
-    );
+    // const finalPayload = payload.map(({ class_has_discipline_guid, schedule_guids }) => {
+    //   const binaryClassHasDisciplineGuid = uuidParse(class_has_discipline_guid);
+    //   const binaryScheduleGuids = uuidParse(schedule_guids);
+    //   const class_has_discipline_has_schedule_guid = uuidParse(uuidv4());
+    //   return {
+    //     class_has_discipline_guid: binaryClassHasDisciplineGuid,
+    //     schedule_guid: binaryScheduleGuids,
+    //     class_has_discipline_has_schedule_guid,
+    //   };
+    // });
+    // const insertedSchedules: ClassHasDisciplineHasScheduleModel[] = await this.knex(
+    //   'class_has_discipline_has_schedule'
+    // )
+    //   .insert(finalPayload)
+    //   .returning(returningFields);
+    // return insertedSchedules.map(
+    //   ({ class_has_discipline_guid, class_has_discipline_has_schedule_guid, schedule_guid }) => {
+    //     console.log();
+    //     return {
+    //       class_has_discipline_has_schedule_guid: uuidStringfy(
+    //         class_has_discipline_has_schedule_guid as ArrayLike<number>
+    //       ),
+    //       class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
+    //       schedule_guid: uuidStringfy(schedule_guid as ArrayLike<number>),
+    //     };
+    //   }
+    // );
   };
 
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
@@ -219,5 +231,27 @@ export class Class {
     return await this.knex('class_has_discipline_has_schedule')
       .whereIn('class_has_discipline_guid', binaryClassHasDisciplineGuids)
       .whereIn('schedule_guid', binaryScheduleGuids);
+  };
+
+  getClassHasDisciplineByGuid = async (
+    class_has_discipline_guid: string,
+    returningFields: string[]
+  ) => {
+    const binaryGuid = uuidParse(class_has_discipline_guid);
+
+    const classHasDiscipline: ClassHasDisciplineModel = await this.knex('class_has_discipline')
+      .where('class_has_discipline_guid', binaryGuid)
+      .select(returningFields)
+      .first();
+
+    if (!classHasDiscipline) return null;
+
+    return {
+      class_has_discipline_guid,
+      // class_guid: uuidStringfy(classHasDiscipline.class_guid as ArrayLike<number>),
+      // discipline_guid: uuidStringfy(classHasDiscipline.discipline_guid as ArrayLike<number>),
+      workload: classHasDiscipline.workload,
+      filled_workload: classHasDiscipline.filled_workload,
+    };
   };
 }

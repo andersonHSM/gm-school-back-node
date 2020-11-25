@@ -1,14 +1,11 @@
 import { KnexInstance } from '@config/index';
-import { scheduleAlreadyExistsException } from '@exceptions/schedule-exceptions';
 import { ScheduleModel } from '@models/entities';
 import { ScheduleInsertPayload, ScheduleUpdatePayload } from '@models/requests/schedule';
-import { query } from 'express';
-import Knex, { QueryBuilder } from 'knex';
+import Knex from 'knex';
 import { parse as uuidParse, stringify as uuidStringify, v4 as uuidv4 } from 'uuid';
 
 export class Schedule {
   constructor(private readonly knex: Knex) {}
-  private readonly baseQuery = KnexInstance('schedule');
 
   insertSchedule = async (returningFields: string[], payload: ScheduleInsertPayload) => {
     const schedule_guid = uuidv4();
@@ -105,10 +102,34 @@ export class Schedule {
   ): Promise<ScheduleModel | null> => {
     const binaryGuid = uuidParse(schedule_guid);
 
-    return await this.knex('schedule')
+    const schedule: ScheduleModel = await this.knex('schedule')
       .select(returningFields)
       .where('schedule_guid', binaryGuid)
       .whereNull('deleted_at')
       .first();
+
+    if (!schedule) return null;
+
+    const { schedule_guid: queryGuid, ...data } = schedule;
+
+    return { schedule_guid, ...data };
+  };
+
+  getSchedulesByGuidsInterval = async (schedule_guids: string[], returningFields: string[]) => {
+    const binaryGuids = schedule_guids.map(guid => uuidParse(guid));
+
+    const schedules: ScheduleModel[] = await this.knex('schedule')
+      .whereIn('schedule_guid', binaryGuids)
+      .select(returningFields)
+      .orderBy('week_day')
+      .orderBy('begin_time');
+
+    if (schedules.length === 0) {
+      return [];
+    }
+
+    return schedules.map(({ schedule_guid, ...data }) => {
+      return { schedule_guid: uuidStringify(schedule_guid as ArrayLike<number>), ...data };
+    });
   };
 }

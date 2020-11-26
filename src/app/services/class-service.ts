@@ -1,16 +1,29 @@
-import { Class, Discipline } from '@database/accessors';
-import { classNotFoundException, invalidClassPayloadException } from '@exceptions/class-exceptions';
+import { Class, Discipline, Schedule } from '@database/accessors';
+import {
+  classDisciplineAlredyWithScheduleException,
+  classNotFoundException,
+  invalidClassPayloadException,
+} from '@exceptions/class-exceptions';
 import { disciplineNotFoundException } from '@exceptions/discipline-exceptions';
-import { HttpException, unkownException } from '@exceptions/index';
+import { unkownException } from '@exceptions/index';
+import { fieldMessageException } from '@exceptions/schema';
+import { ClassHasDisciplineModel, ScheduleModel } from '@models/entities';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
   SetDisciplinesToClassRequestPayload,
+  SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
+import { differenceInMinutes, set as setDate, setDay, addDays, formatISO, isAfter } from 'date-fns';
 import Joi from 'joi';
+import { clone, includes } from 'ramda';
 
 export class ClassService {
-  constructor(private readonly classEntity: Class, private readonly discipline: Discipline) {}
+  constructor(
+    private readonly classEntity: Class,
+    private readonly discipline: Discipline,
+    private readonly schedule: Schedule
+  ) {}
 
   private readonly returningFields = [
     'class.class_guid',
@@ -24,6 +37,22 @@ export class ClassService {
     'class_has_discipline.class_has_discipline_guid',
     'class_has_discipline.class_guid',
     'class_has_discipline.discipline_guid',
+    'class_has_discipline.workload',
+    'class_has_discipline.filled_workload',
+  ];
+
+  private readonly classHasDisciplineHasScheduleReturningFields = [
+    'class_has_discipline_has_schedule.class_has_discipline_has_schedule_guid',
+    'class_has_discipline_has_schedule.class_has_discipline_guid',
+    'class_has_discipline_has_schedule.schedule_guid',
+    'class_has_discipline_has_schedule.class_date',
+  ];
+
+  private readonly scheduleReturningFields = [
+    'schedule.schedule_guid',
+    'schedule.week_day',
+    'schedule.begin_time',
+    'schedule.end_time',
   ];
 
   getClass = async (class_guid: string) => {
@@ -108,14 +137,14 @@ export class ClassService {
 
     let finalPayload: any[] = [];
 
-    for (const { discipline_guid } of payload) {
+    for (const { discipline_guid, workload } of payload) {
       const [existingDiscipline, existingClassDiscipline] = await Promise.all([
         this.discipline.verifyExistingDiscipline(discipline_guid as string),
         this.classEntity.verifyExistingClassDiscipline(class_guid, discipline_guid as string),
       ]);
 
       if (!existingClassDiscipline && existingDiscipline) {
-        finalPayload = finalPayload.concat({ discipline_guid });
+        finalPayload = finalPayload.concat({ discipline_guid, workload });
       }
     }
 
@@ -181,5 +210,188 @@ export class ClassService {
           throw unkownException(error.message);
       }
     }
+  };
+
+  setScheduleToClassByDiscipline = async (payload: SetScheduleToClassByDisciplinePayload) => {
+    const schema = Joi.array().items({
+      class_has_discipline_guid: Joi.string().required(),
+      schedule_guids: Joi.array().items(Joi.string()).required(),
+    });
+
+    try {
+      await schema.validateAsync(payload);
+    } catch (error) {
+      throw fieldMessageException(error.message);
+    }
+
+    const removedDuplicateds = this.removeDuplicatedSchedule(payload);
+
+    await this.verifyExistingSchedulesByClassDiscipline(removedDuplicateds);
+
+    // TODO - create table to store this data, wich represents the beginning of the school year
+    const startTime = setDate(Date.now(), { month: 0, date: 20 });
+    const endTime = setDate(Date.now(), { month: 10, date: 20 });
+
+    const finalPayload = await this.calculateSchedulesDates(removedDuplicateds, startTime, endTime);
+
+    return await this.classEntity.setScheduleToClassByDiscipline(
+      this.classHasDisciplineHasScheduleReturningFields,
+      finalPayload as any
+    );
+  };
+
+  private removeDuplicatedSchedule = (arr: SetScheduleToClassByDisciplinePayload) => {
+    return arr.reduce((acc, current) => {
+      const existingValue = acc.find(
+        item => item.class_has_discipline_guid === current.class_has_discipline_guid
+      );
+
+      if (!existingValue) {
+        const { class_has_discipline_guid, schedule_guids } = current;
+
+        return acc.concat({
+          class_has_discipline_guid,
+          schedule_guids: Array.from(new Set(schedule_guids)),
+        });
+      } else {
+        return acc;
+      }
+    }, [] as SetScheduleToClassByDisciplinePayload);
+  };
+
+  private verifyExistingSchedulesByClassDiscipline = async (
+    arr: SetScheduleToClassByDisciplinePayload
+  ) => {
+    const guid1 = arr.map(({ class_has_discipline_guid }) => class_has_discipline_guid);
+    const guid2 = arr.map(({ schedule_guids }) => schedule_guids);
+
+    let relations: any[] = [];
+
+    for (const scheduleguid of guid2) {
+      const existingRelation = await this.classEntity.verifyExistingClassDisciplineSchedule(
+        guid1,
+        scheduleguid
+      );
+
+      relations = relations.concat(existingRelation);
+    }
+
+    if (relations.length > 0) {
+      throw classDisciplineAlredyWithScheduleException();
+    }
+  };
+
+  private calculateSchedulesDates = async (
+    arr: SetScheduleToClassByDisciplinePayload,
+    startTime: Date,
+    endTime: Date
+  ) => {
+    let data: {
+      classHasDiscipline: ClassHasDisciplineModel;
+      schedules: ScheduleModel[];
+    }[] = [];
+
+    for (const { class_has_discipline_guid, schedule_guids } of arr) {
+      const classHasDiscipline = await this.classEntity.getClassHasDisciplineByGuid(
+        class_has_discipline_guid,
+        this.classHasDisciplineReturningFields
+      );
+
+      const schedules = await this.schedule.getSchedulesByGuidsInterval(
+        schedule_guids,
+        this.scheduleReturningFields
+      );
+
+      if (schedules.length === 0 || !classHasDiscipline) {
+        return;
+      }
+
+      data = [...data, { classHasDiscipline, schedules }];
+    }
+
+    this.verifyConflictingSchedulesForClass(data);
+
+    return data
+      .map(({ classHasDiscipline, schedules }) => {
+        let { workload, filled_workload } = classHasDiscipline;
+
+        workload = workload * 60;
+
+        let payloads: any = [];
+
+        let date: Date = clone(startTime);
+
+        while (filled_workload <= workload) {
+          schedules.forEach(({ schedule_guid, week_day, begin_time, end_time }, index) => {
+            const [beginTimeHour, beginTimeMinute, beginTimeSecond] = begin_time.split(':');
+            const [endTimeHour, endTimeMinute, endTimeSecond] = end_time.split(':');
+
+            const classBeginTime = setDate(new Date(), {
+              hours: +beginTimeHour,
+              minutes: +beginTimeMinute,
+              seconds: +beginTimeSecond,
+            });
+            const clasEndTime = setDate(new Date(), {
+              hours: +endTimeHour,
+              minutes: +endTimeMinute,
+              seconds: +endTimeSecond,
+            });
+
+            date = setDay(clone(date), week_day, { weekStartsOn: 0 });
+
+            if (index === 0) {
+              date = addDays(clone(date), 7);
+            }
+
+            const minutesOffset = differenceInMinutes(clasEndTime, classBeginTime);
+
+            filled_workload += minutesOffset;
+
+            if (filled_workload > workload || isAfter(date, endTime)) return;
+
+            payloads = payloads.concat({
+              class_has_discipline_guid: classHasDiscipline.class_has_discipline_guid,
+              schedule_guid,
+              class_date: formatISO(date, { representation: 'date' }),
+            });
+          });
+        }
+
+        return payloads;
+      })
+      .flat();
+  };
+
+  private verifyConflictingSchedulesForClass = (
+    arr: {
+      classHasDiscipline: ClassHasDisciplineModel;
+      schedules: ScheduleModel[];
+    }[]
+  ) => {
+    arr.reduce(
+      (acc, current) => {
+        if (acc.length > 0) {
+          const found = acc.some(({ classHasDiscipline, schedules }) => {
+            return (
+              classHasDiscipline.class_guid === current.classHasDiscipline.class_guid &&
+              schedules.some(el => {
+                return includes(el, current.schedules);
+              })
+            );
+          });
+
+          if (found) {
+            throw classDisciplineAlredyWithScheduleException();
+          }
+        }
+
+        acc = acc.concat(current);
+        return acc;
+      },
+      [] as {
+        classHasDiscipline: ClassHasDisciplineModel;
+        schedules: ScheduleModel[];
+      }[]
+    );
   };
 }

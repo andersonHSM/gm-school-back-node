@@ -4,6 +4,7 @@ class - 6xx
 
 601 - Class not found
 602 - Invalid class payload
+603 - Conflicting schedule for provided discipline by class
 
 user - 7xx
 
@@ -23,6 +24,7 @@ schema - 901 - 998
 
 901 - Verify the fields
 
+
 unknown - 999
 
 discipline - 10xx
@@ -39,3 +41,7 @@ auth - 12xx
 
 1201 - Invaid token provided
 1202 - A token must me provided
+
+schedule - 13xx
+1301 - This schedule already exists
+1302 - Schedule not found

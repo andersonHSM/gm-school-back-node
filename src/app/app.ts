@@ -1,5 +1,5 @@
-import { init as Loaders } from '@loaders/index';
-import { EnviromentConfig } from '@config/index';
+import { init as Loaders } from '@loaders/';
+import { EnviromentConfig } from '@config/';
 
 import express from 'express';
 

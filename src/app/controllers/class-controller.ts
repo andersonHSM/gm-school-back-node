@@ -6,6 +6,7 @@ import {
   ClassInsertPayload,
   ClassUpdatePayload,
   SetDisciplinesToClassRequestPayload,
+  SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
 import { ClassService } from '@services/index';
 import { Request, Response } from 'express';
@@ -146,6 +147,25 @@ export class ClassController implements BaseController {
       );
 
       return res.status(200).json(classWithDisciplines);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  setScheduleToClassByDiscipline = async (
+    req: Request<{ class_guid: string }, null, SetScheduleToClassByDisciplinePayload>,
+    res: Response
+  ) => {
+    const { body: payload } = req;
+
+    try {
+      const returning = await this.classService.setScheduleToClassByDiscipline(payload);
+
+      return res.status(201).json(returning);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());

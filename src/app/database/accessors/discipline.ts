@@ -105,12 +105,20 @@ export class Discipline {
       await this.knex('discipline')
         .where('class_has_discipline.class_guid', binaryGuid)
         .whereNull('discipline.deleted_at')
-        .select(['discipline.description', 'discipline.discipline_guid'])
+        .select([
+          'discipline.description',
+          'discipline.discipline_guid',
+          'class_has_discipline.class_has_discipline_guid',
+        ])
         .join('class_has_discipline', function () {
           this.on('class_has_discipline.discipline_guid', '=', 'discipline.discipline_guid');
         })
-    ).map(({ description, discipline_guid }) => {
-      return { discipline_guid: uuidStringfy(discipline_guid), description };
+    ).map(({ description, discipline_guid, class_has_discipline_guid }) => {
+      return {
+        discipline_guid: uuidStringfy(discipline_guid),
+        description,
+        class_has_discipline_guid: uuidStringfy(class_has_discipline_guid),
+      };
     });
 
     return disciplines;

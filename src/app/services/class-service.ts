@@ -228,7 +228,11 @@ export class ClassService {
 
     await this.verifyExistingSchedulesByClassDiscipline(removedDuplicateds);
 
-    const finalPayload = await this.calculateSchedulesDates(removedDuplicateds);
+    // TODO - create table to store this data, wich represents the beginning of the school year
+    const startTime = setDate(Date.now(), { month: 0, date: 20 });
+    const endTime = setDate(Date.now(), { month: 10, date: 20 });
+
+    const finalPayload = await this.calculateSchedulesDates(removedDuplicateds, startTime, endTime);
 
     return await this.classEntity.setScheduleToClassByDiscipline(
       this.classHasDisciplineHasScheduleReturningFields,
@@ -277,11 +281,11 @@ export class ClassService {
     }
   };
 
-  private calculateSchedulesDates = async (arr: SetScheduleToClassByDisciplinePayload) => {
-    // TODO - create table to store this data, wich represents the beginning of the school year
-    const startTime = setDate(Date.now(), { month: 0, date: 20 });
-    const endTime = setDate(Date.now(), { month: 10, date: 20 });
-
+  private calculateSchedulesDates = async (
+    arr: SetScheduleToClassByDisciplinePayload,
+    startTime: Date,
+    endTime: Date
+  ) => {
     let data: {
       classHasDiscipline: ClassHasDisciplineModel;
       schedules: ScheduleModel[];

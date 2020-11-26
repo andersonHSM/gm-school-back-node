@@ -322,12 +322,12 @@ export class ClassService {
             const [beginTimeHour, beginTimeMinute, beginTimeSecond] = begin_time.split(':');
             const [endTimeHour, endTimeMinute, endTimeSecond] = end_time.split(':');
 
-            const beginTime = setDate(new Date(), {
+            const classBeginTime = setDate(new Date(), {
               hours: +beginTimeHour,
               minutes: +beginTimeMinute,
               seconds: +beginTimeSecond,
             });
-            const endTime = setDate(new Date(), {
+            const clasEndTime = setDate(new Date(), {
               hours: +endTimeHour,
               minutes: +endTimeMinute,
               seconds: +endTimeSecond,
@@ -339,7 +339,7 @@ export class ClassService {
               date = addDays(clone(date), 7);
             }
 
-            const minutesOffset = differenceInMinutes(endTime, beginTime);
+            const minutesOffset = differenceInMinutes(clasEndTime, classBeginTime);
 
             filled_workload += minutesOffset;
 

@@ -88,8 +88,6 @@ export class Schedule {
       .whereNull('deleted_at')
       .orderBy([{ column: 'week_day', order: 'asc' }, 'begin_time']);
 
-    console.log('schedules');
-
     return schedules.map(({ schedule_guid, ...data }) => ({
       schedule_guid: uuidStringify(schedule_guid as ArrayLike<number>),
       ...data,

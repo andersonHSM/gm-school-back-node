@@ -163,35 +163,43 @@ export class Class {
 
   setScheduleToClassByDiscipline = async (
     returningFields: string[],
-    payload: SetScheduleToClassByDisciplinePayload
+    payload: Omit<ClassHasDisciplineHasScheduleModel, 'class_has_discipline_has_schedule_guid'>[]
   ) => {
-    // const finalPayload = payload.map(({ class_has_discipline_guid, schedule_guids }) => {
-    //   const binaryClassHasDisciplineGuid = uuidParse(class_has_discipline_guid);
-    //   const binaryScheduleGuids = uuidParse(schedule_guids);
-    //   const class_has_discipline_has_schedule_guid = uuidParse(uuidv4());
-    //   return {
-    //     class_has_discipline_guid: binaryClassHasDisciplineGuid,
-    //     schedule_guid: binaryScheduleGuids,
-    //     class_has_discipline_has_schedule_guid,
-    //   };
-    // });
-    // const insertedSchedules: ClassHasDisciplineHasScheduleModel[] = await this.knex(
-    //   'class_has_discipline_has_schedule'
-    // )
-    //   .insert(finalPayload)
-    //   .returning(returningFields);
-    // return insertedSchedules.map(
-    //   ({ class_has_discipline_guid, class_has_discipline_has_schedule_guid, schedule_guid }) => {
-    //     console.log();
-    //     return {
-    //       class_has_discipline_has_schedule_guid: uuidStringfy(
-    //         class_has_discipline_has_schedule_guid as ArrayLike<number>
-    //       ),
-    //       class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
-    //       schedule_guid: uuidStringfy(schedule_guid as ArrayLike<number>),
-    //     };
-    //   }
-    // );
+    const finalPayload = payload.map(({ class_has_discipline_guid, schedule_guid, class_date }) => {
+      const binaryClassHasDisciplineGuid = uuidParse(class_has_discipline_guid as string);
+      const binaryScheduleGuids = uuidParse(schedule_guid as string);
+      const class_has_discipline_has_schedule_guid = uuidParse(uuidv4());
+      return {
+        class_has_discipline_has_schedule_guid,
+        class_has_discipline_guid: binaryClassHasDisciplineGuid,
+        schedule_guid: binaryScheduleGuids,
+        class_date,
+      };
+    });
+
+    const insertedSchedules: ClassHasDisciplineHasScheduleModel[] = await this.knex(
+      'class_has_discipline_has_schedule'
+    )
+      .insert(finalPayload)
+      .returning(returningFields);
+
+    return insertedSchedules.map(
+      ({
+        class_has_discipline_guid,
+        class_has_discipline_has_schedule_guid,
+        schedule_guid,
+        class_date,
+      }) => {
+        return {
+          class_has_discipline_has_schedule_guid: uuidStringfy(
+            class_has_discipline_has_schedule_guid as ArrayLike<number>
+          ),
+          class_has_discipline_guid: uuidStringfy(class_has_discipline_guid as ArrayLike<number>),
+          schedule_guid: uuidStringfy(schedule_guid as ArrayLike<number>),
+          class_date,
+        };
+      }
+    );
   };
 
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
@@ -248,8 +256,8 @@ export class Class {
 
     return {
       class_has_discipline_guid,
-      // class_guid: uuidStringfy(classHasDiscipline.class_guid as ArrayLike<number>),
-      // discipline_guid: uuidStringfy(classHasDiscipline.discipline_guid as ArrayLike<number>),
+      class_guid: uuidStringfy(classHasDiscipline.class_guid as ArrayLike<number>),
+      discipline_guid: uuidStringfy(classHasDiscipline.discipline_guid as ArrayLike<number>),
       workload: classHasDiscipline.workload,
       filled_workload: classHasDiscipline.filled_workload,
     };

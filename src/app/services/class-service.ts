@@ -7,15 +7,16 @@ import {
 import { disciplineNotFoundException } from '@exceptions/discipline-exceptions';
 import { unkownException } from '@exceptions/index';
 import { fieldMessageException } from '@exceptions/schema';
+import { ClassHasDisciplineModel, ScheduleModel } from '@models/entities';
 import {
   ClassInsertPayload,
   ClassUpdatePayload,
   SetDisciplinesToClassRequestPayload,
   SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
-import { set as setDate } from 'date-fns';
+import { differenceInMinutes, set as setDate, setDay, addDays, formatISO, isAfter } from 'date-fns';
 import Joi from 'joi';
-import { clone } from 'ramda';
+import { clone, includes } from 'ramda';
 
 export class ClassService {
   constructor(
@@ -44,6 +45,7 @@ export class ClassService {
     'class_has_discipline_has_schedule.class_has_discipline_has_schedule_guid',
     'class_has_discipline_has_schedule.class_has_discipline_guid',
     'class_has_discipline_has_schedule.schedule_guid',
+    'class_has_discipline_has_schedule.class_date',
   ];
 
   private readonly scheduleReturningFields = [
@@ -222,20 +224,15 @@ export class ClassService {
       throw fieldMessageException(error.message);
     }
 
-    console.log(payload[0].schedule_guids);
-
     const removedDuplicateds = this.removeDuplicatedSchedule(payload);
-
-    console.log(removedDuplicateds[0].schedule_guids);
-    await this.calculateSchedulesDates(removedDuplicateds);
-
-    return;
 
     await this.verifyExistingSchedulesByClassDiscipline(removedDuplicateds);
 
+    const finalPayload = await this.calculateSchedulesDates(removedDuplicateds);
+
     return await this.classEntity.setScheduleToClassByDiscipline(
       this.classHasDisciplineHasScheduleReturningFields,
-      removedDuplicateds
+      finalPayload as any
     );
   };
 
@@ -285,7 +282,10 @@ export class ClassService {
     const startTime = setDate(Date.now(), { month: 0, date: 20 });
     const endTime = setDate(Date.now(), { month: 10, date: 20 });
 
-    console.log({ startTime, endTime });
+    let data: {
+      classHasDiscipline: ClassHasDisciplineModel;
+      schedules: ScheduleModel[];
+    }[] = [];
 
     for (const { class_has_discipline_guid, schedule_guids } of arr) {
       const classHasDiscipline = await this.classEntity.getClassHasDisciplineByGuid(
@@ -302,9 +302,92 @@ export class ClassService {
         return;
       }
 
-      const scheduleStartTime = clone(startTime);
-
-      console.log({ schedules, classHasDiscipline });
+      data = [...data, { classHasDiscipline, schedules }];
     }
+
+    this.verifyConflictingSchedulesForClass(data);
+
+    return data
+      .map(({ classHasDiscipline, schedules }) => {
+        let { workload, filled_workload } = classHasDiscipline;
+
+        workload = workload * 60;
+
+        let payloads: any = [];
+
+        let date: Date = clone(startTime);
+
+        while (filled_workload <= workload) {
+          schedules.forEach(({ schedule_guid, week_day, begin_time, end_time }, index) => {
+            const [beginTimeHour, beginTimeMinute, beginTimeSecond] = begin_time.split(':');
+            const [endTimeHour, endTimeMinute, endTimeSecond] = end_time.split(':');
+
+            const beginTime = setDate(new Date(), {
+              hours: +beginTimeHour,
+              minutes: +beginTimeMinute,
+              seconds: +beginTimeSecond,
+            });
+            const endTime = setDate(new Date(), {
+              hours: +endTimeHour,
+              minutes: +endTimeMinute,
+              seconds: +endTimeSecond,
+            });
+
+            date = setDay(clone(date), week_day, { weekStartsOn: 0 });
+
+            if (index === 0) {
+              date = addDays(clone(date), 7);
+            }
+
+            const minutesOffset = differenceInMinutes(endTime, beginTime);
+
+            filled_workload += minutesOffset;
+
+            if (filled_workload > workload || isAfter(date, endTime)) return;
+
+            payloads = payloads.concat({
+              class_has_discipline_guid: classHasDiscipline.class_has_discipline_guid,
+              schedule_guid,
+              class_date: formatISO(date, { representation: 'date' }),
+            });
+          });
+        }
+
+        return payloads;
+      })
+      .flat();
+  };
+
+  private verifyConflictingSchedulesForClass = (
+    arr: {
+      classHasDiscipline: ClassHasDisciplineModel;
+      schedules: ScheduleModel[];
+    }[]
+  ) => {
+    arr.reduce(
+      (acc, current) => {
+        if (acc.length > 0) {
+          const found = acc.some(({ classHasDiscipline, schedules }) => {
+            return (
+              classHasDiscipline.class_guid === current.classHasDiscipline.class_guid &&
+              schedules.some(el => {
+                return includes(el, current.schedules);
+              })
+            );
+          });
+
+          if (found) {
+            throw classDisciplineAlredyWithScheduleException();
+          }
+        }
+
+        acc = acc.concat(current);
+        return acc;
+      },
+      [] as {
+        classHasDiscipline: ClassHasDisciplineModel;
+        schedules: ScheduleModel[];
+      }[]
+    );
   };
 }

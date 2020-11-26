@@ -1,4 +1,3 @@
-import { KnexInstance } from '@config/index';
 import { ScheduleModel } from '@models/entities';
 import { ScheduleInsertPayload, ScheduleUpdatePayload } from '@models/requests/schedule';
 import Knex from 'knex';

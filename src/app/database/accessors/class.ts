@@ -7,7 +7,6 @@ import {
   ClassInsertPayload,
   ClassUpdatePayload,
   SetDisciplinesToClassRequestPayload,
-  SetScheduleToClassByDisciplinePayload,
 } from '@models/requests/class';
 import Knex from 'knex';
 import { v4 as uuidv4, parse as uuidParse, stringify as uuidStringfy } from 'uuid';

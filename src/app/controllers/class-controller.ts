@@ -157,7 +157,7 @@ export class ClassController implements BaseController {
   };
 
   setScheduleToClassByDiscipline = async (
-    req: Request<{ class_guid: string }, null, SetScheduleToClassByDisciplinePayload>,
+    req: Request<null, null, SetScheduleToClassByDisciplinePayload>,
     res: Response
   ) => {
     const { body: payload } = req;
@@ -171,6 +171,23 @@ export class ClassController implements BaseController {
         return res.status(error.statusCode).json(error.format());
       }
 
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  getClassSchedules = async (req: Request<{ class_guid: string }>, res: Response) => {
+    const { class_guid } = req.params;
+
+    try {
+      const classSchedules = await this.classService.getClassSchedules(class_guid);
+
+      return res.status(200).json(classSchedules);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      console.log(error);
       return res.status(500).json({ error: error.message });
     }
   };

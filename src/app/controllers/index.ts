@@ -4,3 +4,4 @@ export { ClassController } from './class-controller';
 export { DisciplineController } from './discipline-controller';
 export { ClassStageController } from './class-stage-controller';
 export { ScheduleController } from './schedule-controller';
+export { FrequencyController } from './frequency-controller';

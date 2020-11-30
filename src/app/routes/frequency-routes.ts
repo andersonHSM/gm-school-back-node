@@ -17,11 +17,23 @@ export const frequencyRoutes = (roleMiddlewares: RoleMiddlewares) => {
     frequencyService
   );
 
+  router.get('/', (isAdminOrProfessorOrCoordinator as unknown) as Handler, index);
+
   router.post(
     '/',
     (isAdminOrProfessorOrCoordinator as unknown) as Handler,
     (store as unknown) as Handler
   );
+
+  router.get('/:frequency_guid', show);
+
+  router.delete(
+    '/:frequency_guid',
+    (isAdminOrProfessorOrCoordinator as unknown) as Handler,
+    controllerDeleteFn
+  );
+
+  router.patch('/:frequency_guid', (isAdminOrProfessorOrCoordinator as unknown) as Handler, update);
 
   return router;
 };

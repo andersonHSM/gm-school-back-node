@@ -22,20 +22,9 @@ export class Frequency {
       .insert(finalPayload)
       .returning(returningFields);
 
-    const {
-      class_has_discipline_has_schedule_guid: queryClassScheduleGuid,
-      user_guid: queryUserGuid,
-      is_present: queryIsPresent,
-    } = frequency;
+    if (!frequency) return null;
 
-    return {
-      frequency_guid,
-      class_has_discipline_has_schedule_guid: uuidStringify(
-        queryClassScheduleGuid as ArrayLike<number>
-      ),
-      user_guid: uuidStringify(queryUserGuid as ArrayLike<number>),
-      is_present: queryIsPresent,
-    };
+    return this.preparePayloadToReturn(frequency);
   };
 
   getFrequencyByPayload = async (
@@ -61,20 +50,79 @@ export class Frequency {
 
     if (!frequency) return null;
 
+    return this.preparePayloadToReturn(frequency);
+  };
+
+  retrieveFrequency = async (frequency_guid: string, returningFields: string[]) => {
+    const binaryGuid = uuidParse(frequency_guid);
+
+    const frequency: FrequencyModel = await this.knex('frequency')
+      .select(returningFields)
+      .where('frequency_guid', binaryGuid)
+      .whereNull('deleted_at')
+      .first();
+
+    if (!frequency) return null;
+
+    return this.preparePayloadToReturn(frequency);
+  };
+
+  listFrequencies = async (returningFields: string[]) => {
+    const frequencies: FrequencyModel[] = await this.knex('frequency')
+      .select(returningFields)
+      .whereNull('deleted_at');
+
+    return frequencies.map(frequency => this.preparePayloadToReturn(frequency));
+  };
+
+  deleteFrequency = async (frequency_guid: string, returningFields: string[]) => {
+    const binaryGuid = uuidParse(frequency_guid);
+
+    const [frequency]: FrequencyModel[] = await this.knex('frequency')
+      .where('frequency_guid', binaryGuid)
+      .update('deleted_at', this.knex.fn.now())
+      .returning([...returningFields, 'deleted_at']);
+
+    if (!frequency) return null;
+
+    return this.preparePayloadToReturn(frequency);
+  };
+
+  updateFrequency = async (
+    frequency_guid: string,
+    returningFields: string[],
+    payload: Pick<FrequencyModel, 'is_present'>
+  ) => {
+    const binaryGuid = uuidParse(frequency_guid);
+
+    const [frequency]: FrequencyModel[] = await this.knex('frequency')
+      .where('frequency_guid', binaryGuid)
+      .update(payload)
+      .returning(returningFields)
+      .whereNull('deleted_at');
+
+    if (!frequency) return null;
+
+    return this.preparePayloadToReturn(frequency);
+  };
+
+  private preparePayloadToReturn = (data: FrequencyModel) => {
     const {
       class_has_discipline_has_schedule_guid,
-      frequency_guid,
-      user_guid,
       is_present,
-    } = frequency;
+      user_guid,
+      frequency_guid,
+      ...remaining
+    } = data;
 
     return {
+      frequency_guid: uuidStringify(frequency_guid as ArrayLike<number>),
       class_has_discipline_has_schedule_guid: uuidStringify(
         class_has_discipline_has_schedule_guid as ArrayLike<number>
       ),
       user_guid: uuidStringify(user_guid as ArrayLike<number>),
-      frequency_guid: uuidStringify(frequency_guid as ArrayLike<number>),
       is_present,
+      ...remaining,
     };
   };
 }

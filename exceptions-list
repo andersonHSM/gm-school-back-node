@@ -47,4 +47,5 @@ schedule - 13xx
 1302 - Schedule not found
 
 frequency - 14xx
-1401 - This frequency already exists
+1401 - Frequency already exists
+1402 - Frequency not found

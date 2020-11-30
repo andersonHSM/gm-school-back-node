@@ -1,5 +1,5 @@
 import { HttpException } from '@exceptions/';
 
 export const frequencyAlreadyExistsException = () => {
-  return new HttpException('This frequency already exists', 1401, 422);
+  return new HttpException('Frequency already exists', 1401, 422);
 };

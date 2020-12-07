@@ -60,8 +60,14 @@
       "@routes/": ["src/app/routes"],
 
       "@services/*": ["src/app/services/*"],
+      "@services/": ["src/app/services"],
+
       "@middlewares/*": ["src/app/middlewares/*"],
+      "@middlewares/": ["src/app/middlewares"],
+
       "@exceptions/*": ["src/app/exceptions/*"],
+      "@exceptions/": ["src/app/exceptions"],
+
       "@database/*": ["src/app/database/*"]
     } /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */,
     // "rootDirs": [],                        /* List of root folders whose combined content represents the structure of the project at runtime. */

@@ -25,6 +25,7 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
     unsetDisciplineToClass,
     getActiveClassWithDisciplines,
     setScheduleToClassByDiscipline,
+    getClassSchedules,
   } = new ClassController(classService);
 
   // Basic Class Entity CRUD
@@ -52,10 +53,12 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   router.get('/:class_guid/disciplines', getActiveClassWithDisciplines);
 
   router.post(
-    '/:class_guid/schedule',
+    '/schedules',
     (isAdmin as unknown) as Handler,
-    setScheduleToClassByDiscipline
+    (setScheduleToClassByDiscipline as unknown) as Handler
   );
+
+  router.get('/:class_guid/schedules', getClassSchedules);
 
   return router;
 };

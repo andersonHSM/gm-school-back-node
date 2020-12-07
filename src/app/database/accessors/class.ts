@@ -201,6 +201,50 @@ export class Class {
     );
   };
 
+  getClassSchedules = async (class_guid: string) => {
+    const binaryGuid = uuidParse(class_guid);
+
+    const classWithSchedules = await this.knex('class_has_discipline')
+      .select([
+        'class_has_discipline_has_schedule_guid',
+        'class_has_discipline_has_schedule.class_date',
+        'class_has_discipline.discipline_guid',
+        'discipline.description as discipline',
+        'schedule.begin_time',
+        'schedule.end_time',
+      ])
+      .where('class_guid', binaryGuid)
+      .join('class_has_discipline_has_schedule', function () {
+        this.on(
+          'class_has_discipline_has_schedule.class_has_discipline_guid',
+          '=',
+          'class_has_discipline.class_has_discipline_guid'
+        );
+      })
+      .join(
+        'schedule',
+        'schedule.schedule_guid',
+        '=',
+        'class_has_discipline_has_schedule.schedule_guid'
+      )
+      .join(
+        'discipline',
+        'discipline.discipline_guid',
+        '=',
+        'class_has_discipline.discipline_guid'
+      );
+
+    return classWithSchedules.map(
+      ({ class_has_discipline_has_schedule_guid, discipline_guid, ...data }) => ({
+        class_has_discipline_has_schedule_guid: uuidStringfy(
+          class_has_discipline_has_schedule_guid
+        ),
+        discipline_guid: uuidStringfy(discipline_guid),
+        ...data,
+      })
+    );
+  };
+
   private verifyUuid = (guid: string | ArrayLike<number>): ArrayLike<number> => {
     return typeof guid === 'string' ? uuidParse(guid) : guid;
   };

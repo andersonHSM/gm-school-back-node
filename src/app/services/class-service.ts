@@ -240,6 +240,16 @@ export class ClassService {
     );
   };
 
+  getClassSchedules = async (class_guid: string) => {
+    const existingClass = await this.classEntity.getClass(class_guid, this.returningFields);
+
+    if (!existingClass) throw classNotFoundException();
+
+    const schedules = await this.classEntity.getClassSchedules(class_guid);
+
+    return { ...existingClass, schedules };
+  };
+
   private removeDuplicatedSchedule = (arr: SetScheduleToClassByDisciplinePayload) => {
     return arr.reduce((acc, current) => {
       const existingValue = acc.find(

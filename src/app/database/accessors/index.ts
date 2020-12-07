@@ -6,3 +6,4 @@ export { Class } from './class';
 export { Discipline } from './discipline';
 export { ClassStage } from './class-stage';
 export { Schedule } from './schedule';
+export { Frequency } from './frequency';

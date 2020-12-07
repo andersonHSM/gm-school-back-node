@@ -6,3 +6,4 @@ export { ClassService } from './class-service';
 export { DisciplineService } from './discipline-service';
 export { ClassStageService } from './class-stage-service';
 export { ScheduleService } from './schedule-service';
+export { FrequencyService } from './frequency-service';

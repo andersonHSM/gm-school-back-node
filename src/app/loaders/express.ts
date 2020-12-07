@@ -9,10 +9,11 @@ import {
   disciplineRoutes,
   userRoutes,
   scheduleRoutes,
-} from '@routes/index';
-import { JwtService } from '@services/index';
-import { EnviromentConfig, KnexInstance } from '@config/index';
-import { AuthMiddleware, RoleMiddlewares } from '@middlewares/index';
+  frequencyRoutes,
+} from '@routes/';
+import { JwtService } from '@services/';
+import { EnviromentConfig, KnexInstance } from '@config/';
+import { AuthMiddleware, RoleMiddlewares } from '@middlewares/';
 import { Role } from '@database/accessors';
 
 export default async (app: express.Application) => {
@@ -42,6 +43,8 @@ export default async (app: express.Application) => {
   app.use('/class-stage/', classStageRoutes(roleMiddlewares));
 
   app.use('/schedules/', scheduleRoutes(roleMiddlewares));
+
+  app.use('/frequency', frequencyRoutes(roleMiddlewares));
 
   return app;
 };

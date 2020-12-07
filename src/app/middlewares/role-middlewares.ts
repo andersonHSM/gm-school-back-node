@@ -72,4 +72,26 @@ export class RoleMiddlewares {
     }
     return next();
   };
+
+  isAdminOrProfessorOrCoordinator = async (
+    req: Request & AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+  ) => {
+    const { user_guid } = req;
+
+    try {
+      const role = await this.role.getRoleByUserGuid(user_guid);
+
+      if (role?.description !== RolesEnum.student) {
+        return next();
+      }
+
+      return res.status(403).json({ message: 'User must not me a student.' });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+    }
+  };
 }

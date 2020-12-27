@@ -1,4 +1,4 @@
-import { ScheduleModel } from '@models/entities';
+import { ClassHasDisciplineHasScheduleModel, ScheduleModel } from '@models/entities';
 import { ScheduleInsertPayload, ScheduleUpdatePayload } from '@models/requests/schedule';
 import Knex from 'knex';
 import { parse as uuidParse, stringify as uuidStringify, v4 as uuidv4 } from 'uuid';
@@ -128,5 +128,56 @@ export class Schedule {
     return schedules.map(({ schedule_guid, ...data }) => {
       return { schedule_guid: uuidStringify(schedule_guid as ArrayLike<number>), ...data };
     });
+  };
+
+  getScheduleByClassHasDisciplineGuid = async (
+    class_has_discipline_guid: string,
+    returningFields: string[]
+  ) => {
+    const binaryGuid = uuidParse(class_has_discipline_guid);
+
+    const schedules: (ClassHasDisciplineHasScheduleModel & ScheduleModel)[] = await this.knex(
+      'class_has_discipline_has_schedule'
+    )
+      .where('class_has_discipline_guid', binaryGuid)
+      .innerJoin('schedule', function () {
+        this.on('class_has_discipline_has_schedule.schedule_guid', '=', 'schedule.schedule_guid');
+      })
+      .select(returningFields)
+      .orderBy('class_date', 'asc')
+      .orderBy('begin_time');
+
+    return schedules.map(
+      ({
+        class_has_discipline_guid,
+        schedule_guid,
+        class_has_discipline_has_schedule_guid,
+        ...data
+      }) => ({
+        class_has_discipline_has_schedule_guid: uuidStringify(
+          class_has_discipline_has_schedule_guid as ArrayLike<number>
+        ),
+        schedule_guid: uuidStringify(schedule_guid as ArrayLike<number>),
+        class_has_discipline_guid: uuidStringify(class_has_discipline_guid as ArrayLike<number>),
+        ...data,
+      })
+    );
+  };
+
+  setScheduleAsExamDate = async (
+    class_has_discipline_has_schedule_guid: string,
+    payload: boolean
+  ) => {
+    const binaryGuid = uuidParse(class_has_discipline_has_schedule_guid);
+
+    console.log(
+      await this.knex('class_has_discipline_has_schedule')
+        .where('class_has_discipline_has_schedule_guid', binaryGuid)
+        .select('*')
+    );
+
+    return await this.knex('class_has_discipline_has_schedule')
+      .update('is_exam_date', payload)
+      .where('class_has_discipline_has_schedule_guid', binaryGuid);
   };
 }

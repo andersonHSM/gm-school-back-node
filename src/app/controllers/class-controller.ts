@@ -191,4 +191,86 @@ export class ClassController implements BaseController {
       return res.status(500).json({ error: error.message });
     }
   };
+
+  setUsersToClass = async (
+    req: Request<{ class_guid: string }, null, { user_guids: string[] }>,
+    res: Response
+  ) => {
+    const { class_guid } = req.params;
+    const { body: payload } = req;
+
+    try {
+      const users = await this.classService.setUsersToClass(class_guid, payload.user_guids);
+
+      return res.status(200).json(users);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      console.log(error);
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  getClassWithDetails = async (req: Request<{ class_guid: string }>, res: Response) => {
+    const { class_guid } = req.params;
+
+    try {
+      const classDetails = await this.classService.getClassWithDetails(class_guid);
+
+      return res.status(200).json(classDetails);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  getClassDisciplineDetails = async (
+    req: Request<{ class_guid: string; discipline_guid: string }>,
+    res: Response
+  ) => {
+    const { class_guid, discipline_guid } = req.params;
+
+    try {
+      const classDisciplineDetails = await this.classService.getClassDisciplineDetails(
+        class_guid,
+        discipline_guid
+      );
+
+      return res.status(200).json(classDisciplineDetails);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      console.log(error);
+      return res.status(500).json({ error: error.message });
+    }
+  };
+
+  getDisciplineScheduleFrequencies = async (
+    req: Request<{ class_has_discipline_has_schedule_guid: string }>,
+    res: Response
+  ) => {
+    const { class_has_discipline_has_schedule_guid } = req.params;
+
+    try {
+      const classDisciplineDetails = await this.classService.getDisciplineScheduleFrequencies(
+        class_has_discipline_has_schedule_guid
+      );
+
+      return res.status(200).json(classDisciplineDetails);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      console.log(error);
+      return res.status(500).json({ error: error.message });
+    }
+  };
 }

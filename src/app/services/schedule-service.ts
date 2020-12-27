@@ -96,6 +96,17 @@ export class ScheduleService {
     return { ...schedule, schedule_guid };
   };
 
+  setScheduleAsExamDate = async (
+    class_has_discipline_has_schedule_guid: string,
+    payload: boolean
+  ) => {
+    console.log({ payload, class_has_discipline_has_schedule_guid });
+    return await this.schedule.setScheduleAsExamDate(
+      class_has_discipline_has_schedule_guid,
+      payload
+    );
+  };
+
   private validateExistingSchedules = async (
     week_day: number | string,
     begin_time: string,

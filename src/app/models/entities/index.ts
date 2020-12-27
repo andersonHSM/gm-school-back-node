@@ -9,3 +9,4 @@ export { ScheduleModel } from './schedule-model';
 export { ClassHasDisciplineHasScheduleModel } from './class-has-discipline-has-schedule-model';
 export { ClassHasDisciplineModel } from './class-has-discipline-model';
 export { FrequencyModel } from './frequency-model';
+export { UserHasClassModel } from './user-has-class-model';

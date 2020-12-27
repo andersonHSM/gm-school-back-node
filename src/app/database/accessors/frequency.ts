@@ -106,6 +106,30 @@ export class Frequency {
     return this.preparePayloadToReturn(frequency);
   };
 
+  getDisciplineScheduleFrequencies = async (
+    class_has_discipline_has_schedule_guid: string,
+    returningFields: string[]
+  ) => {
+    const binaryGuid = await uuidParse(class_has_discipline_has_schedule_guid);
+
+    const frequencies: FrequencyModel[] = await this.knex('frequency')
+      .where('class_has_discipline_has_schedule_guid', binaryGuid)
+      .select(returningFields);
+
+    return frequencies.map(
+      ({ class_has_discipline_has_schedule_guid, user_guid, frequency_guid, ...data }) => {
+        return {
+          class_has_discipline_has_schedule_guid: uuidStringify(
+            class_has_discipline_has_schedule_guid as ArrayLike<number>
+          ),
+          user_guid: uuidStringify(user_guid as ArrayLike<number>),
+          frequency_guid: uuidStringify(frequency_guid as ArrayLike<number>),
+          ...data,
+        };
+      }
+    );
+  };
+
   private preparePayloadToReturn = (data: FrequencyModel) => {
     const {
       class_has_discipline_has_schedule_guid,

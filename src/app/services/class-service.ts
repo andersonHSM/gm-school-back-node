@@ -1,4 +1,4 @@
-import { Class, Discipline, Schedule } from '@database/accessors';
+import { Class, Discipline, Frequency, Schedule, User } from '@database/accessors';
 import {
   classDisciplineAlredyWithScheduleException,
   classNotFoundException,
@@ -22,7 +22,9 @@ export class ClassService {
   constructor(
     private readonly classEntity: Class,
     private readonly discipline: Discipline,
-    private readonly schedule: Schedule
+    private readonly schedule: Schedule,
+    private readonly user: User,
+    private readonly frequency: Frequency
   ) {}
 
   private readonly returningFields = [
@@ -46,6 +48,7 @@ export class ClassService {
     'class_has_discipline_has_schedule.class_has_discipline_guid',
     'class_has_discipline_has_schedule.schedule_guid',
     'class_has_discipline_has_schedule.class_date',
+    'class_has_discipline_has_schedule.is_exam_date',
   ];
 
   private readonly scheduleReturningFields = [
@@ -53,6 +56,27 @@ export class ClassService {
     'schedule.week_day',
     'schedule.begin_time',
     'schedule.end_time',
+  ];
+
+  private readonly userReturningFields = [
+    'user.user_guid',
+    'user.email',
+    'user.first_name',
+    'user.middle_names',
+    'user.last_name',
+    'user.registration',
+  ];
+
+  private readonly disciplineReturningFields = [
+    'discipline.description',
+    'discipline.discipline_guid',
+  ];
+
+  private readonly frequencyReturningFields = [
+    'frequency.frequency_guid',
+    'frequency.user_guid',
+    'frequency.is_present',
+    'frequency.class_has_discipline_has_schedule_guid',
   ];
 
   getClass = async (class_guid: string) => {
@@ -250,6 +274,69 @@ export class ClassService {
     return { ...existingClass, schedules };
   };
 
+  setUsersToClass = async (class_guid: string, userGuids: string[]) => {
+    const usersToInsert: string[] = [];
+
+    for (const user_guid of userGuids) {
+      const isUserInClass = (await this.verifyCurrentStudentInClass(user_guid, class_guid)) != null;
+
+      if (isUserInClass) continue;
+
+      usersToInsert.push(user_guid);
+    }
+
+    if (!usersToInsert.length) return;
+
+    return await this.classEntity.setUsersToClass(class_guid, userGuids);
+  };
+
+  getClassWithDetails = async (class_guid: string) => {
+    const existingClass = await this.classEntity.verifyExistingClass(class_guid);
+
+    if (!existingClass) {
+      throw classNotFoundException();
+    }
+
+    try {
+      const classReturn = await this.classEntity.getClass(class_guid, this.returningFields);
+      const disciplines = await this.discipline.getDisciplineByClassGuid(class_guid);
+      const users = await this.user.getUserByClassguid(class_guid, this.userReturningFields);
+
+      return { ...classReturn, disciplines, users };
+    } catch (error) {
+      switch (error.message) {
+        default:
+          throw unkownException(error.message);
+      }
+    }
+  };
+
+  getClassDisciplineDetails = async (class_guid: string, discipline_guid: string) => {
+    const discipline = await this.discipline.getActiveDiscipline(
+      discipline_guid,
+      this.disciplineReturningFields
+    );
+
+    const disciplines = await this.discipline.getDisciplineByClassGuid(class_guid);
+    const [{ class_has_discipline_guid }] = disciplines.filter(
+      ({ discipline_guid: fnDisciplineGuid }) => discipline_guid === fnDisciplineGuid
+    );
+
+    const schedules = await this.schedule.getScheduleByClassHasDisciplineGuid(
+      class_has_discipline_guid,
+      [...this.classHasDisciplineHasScheduleReturningFields, ...this.scheduleReturningFields]
+    );
+
+    return { ...discipline, schedules };
+  };
+
+  getDisciplineScheduleFrequencies = async (class_has_discipline_has_schedule_guid: string) => {
+    return await this.frequency.getDisciplineScheduleFrequencies(
+      class_has_discipline_has_schedule_guid,
+      this.frequencyReturningFields
+    );
+  };
+
   private removeDuplicatedSchedule = (arr: SetScheduleToClassByDisciplinePayload) => {
     return arr.reduce((acc, current) => {
       const existingValue = acc.find(
@@ -403,5 +490,9 @@ export class ClassService {
         schedules: ScheduleModel[];
       }[]
     );
+  };
+
+  private verifyCurrentStudentInClass = async (user_guid: string, class_guid: string) => {
+    return await this.user.verifyCurrentStudentInClass(user_guid, class_guid);
   };
 }

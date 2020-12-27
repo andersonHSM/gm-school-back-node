@@ -81,4 +81,31 @@ export class ScheduleController implements BaseController {
       return res.status(500).json(error.message);
     }
   };
+
+  setScheduleAsExamDate = async (
+    req: Request<
+      { class_has_discipline_has_schedule_guid: string },
+      null,
+      { is_exam_date: boolean }
+    >,
+    res: Response
+  ) => {
+    const { class_has_discipline_has_schedule_guid } = req.params;
+    const { is_exam_date } = req.body;
+
+    try {
+      const schedule = await this.scheduleService.setScheduleAsExamDate(
+        class_has_discipline_has_schedule_guid,
+        is_exam_date
+      );
+
+      return res.status(200).json(schedule);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+
+      return res.status(500).json(error.message);
+    }
+  };
 }

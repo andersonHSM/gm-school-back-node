@@ -2,6 +2,7 @@ import {
   ClassHasDisciplineHasScheduleModel,
   ClassHasDisciplineModel,
   ClassModel,
+  UserHasClassModel,
 } from '@models/entities';
 import {
   ClassInsertPayload,
@@ -212,6 +213,7 @@ export class Class {
         'discipline.description as discipline',
         'schedule.begin_time',
         'schedule.end_time',
+        'schedule.schedule_guid',
       ])
       .where('class_guid', binaryGuid)
       .join('class_has_discipline_has_schedule', function () {
@@ -235,11 +237,12 @@ export class Class {
       );
 
     return classWithSchedules.map(
-      ({ class_has_discipline_has_schedule_guid, discipline_guid, ...data }) => ({
+      ({ class_has_discipline_has_schedule_guid, discipline_guid, schedule_guid, ...data }) => ({
         class_has_discipline_has_schedule_guid: uuidStringfy(
           class_has_discipline_has_schedule_guid
         ),
         discipline_guid: uuidStringfy(discipline_guid),
+        schedule_guid: uuidStringfy(schedule_guid),
         ...data,
       })
     );
@@ -304,5 +307,27 @@ export class Class {
       workload: classHasDiscipline.workload,
       filled_workload: classHasDiscipline.filled_workload,
     };
+  };
+
+  setUsersToClass = async (class_guid: string, userGuids: string[]) => {
+    const finalPayload = userGuids.map(user_guid => {
+      return {
+        user_has_class_guid: uuidParse(uuidv4()),
+        user_guid: uuidParse(user_guid),
+        class_guid: uuidParse(class_guid),
+      };
+    });
+
+    const userHasClassArray: UserHasClassModel[] = await this.knex('user_has_class')
+      .insert(finalPayload)
+      .returning('*');
+
+    return userHasClassArray.map(({ class_guid, user_guid, user_has_class_guid }) => {
+      return {
+        user_has_class_guid: uuidStringfy(user_has_class_guid as ArrayLike<number>),
+        user_guid: uuidStringfy(user_guid as ArrayLike<number>),
+        class_guid: uuidStringfy(class_guid as ArrayLike<number>),
+      };
+    });
   };
 }

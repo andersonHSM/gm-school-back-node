@@ -1,6 +1,6 @@
 import { KnexInstance } from '@config/index';
 import { ClassController } from '@controllers/index';
-import { Class, Discipline, Schedule } from '@database/accessors';
+import { Class, Discipline, Frequency, Schedule, User } from '@database/accessors';
 import { RoleMiddlewares } from '@middlewares/index';
 import { ClassService } from '@services/index';
 import { Handler, Router } from 'express';
@@ -12,7 +12,9 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   const classService = new ClassService(
     new Class(KnexInstance),
     new Discipline(KnexInstance),
-    new Schedule(KnexInstance)
+    new Schedule(KnexInstance),
+    new User(KnexInstance),
+    new Frequency(KnexInstance)
   );
 
   const {
@@ -26,6 +28,10 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
     getActiveClassWithDisciplines,
     setScheduleToClassByDiscipline,
     getClassSchedules,
+    setUsersToClass,
+    getClassWithDetails,
+    getClassDisciplineDetails,
+    getDisciplineScheduleFrequencies,
   } = new ClassController(classService);
 
   // Basic Class Entity CRUD
@@ -59,6 +65,17 @@ export const classRoutes = (roleMiddlewares: RoleMiddlewares) => {
   );
 
   router.get('/:class_guid/schedules', getClassSchedules);
+
+  router.post('/:class_guid/users', (isAdmin as unknown) as Handler, setUsersToClass);
+
+  router.get('/:class_guid/details', getClassWithDetails);
+
+  router.get('/:class_guid/discipline/:discipline_guid', getClassDisciplineDetails);
+
+  router.get(
+    '/frequency/:class_has_discipline_has_schedule_guid',
+    getDisciplineScheduleFrequencies
+  );
 
   return router;
 };

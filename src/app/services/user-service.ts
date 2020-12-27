@@ -21,6 +21,7 @@ class UserService {
     'user.first_name',
     'user.middle_names',
     'user.last_name',
+    'user.registration',
   ];
 
   getUser = async (user_guid: string) => {
@@ -100,6 +101,10 @@ class UserService {
           throw userNotFoundException();
       }
     }
+  };
+
+  getUsersByRole = async (roles: string[]) => {
+    return await this.user.getUsersByRole(roles, this.userQueryReturningStatement);
   };
 }
 

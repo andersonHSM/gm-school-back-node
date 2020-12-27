@@ -8,16 +8,27 @@ import { Response, Request } from 'express';
 class UserController implements BaseController {
   constructor(private readonly userService: UserService) {}
 
-  index = async (_req: Request & AuthenticatedRequest, res: Response) => {
+  index = async (
+    req: Request<null, null, null, { roles?: string }> & AuthenticatedRequest,
+    res: Response
+  ) => {
+    const roles = req.query.roles?.split(',');
     try {
-      const users = await this.userService.getAllUsers();
+      let users;
+      if (!roles?.length) {
+        users = await this.userService.getAllUsers();
+      } else {
+        users = await this.userService.getUsersByRole(roles);
+      }
 
+      console.log('oi');
       return res.status(200).json(users);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());
       }
 
+      console.log(error);
       return res.status(500).json('Unkown error');
     }
   };
@@ -69,6 +80,19 @@ class UserController implements BaseController {
       const user = await this.userService.getUser(paramUserGuid);
 
       return res.status(200).json(user);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.statusCode).json(error.format());
+      }
+      return res.status(500).json(error);
+    }
+  };
+
+  getUserByRole = async (req: Request<null, null, null, { roles: string }>, res: Response) => {
+    try {
+      // const user = await this.userService.getUser(paramUserGuid);
+
+      return res.status(200).json();
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.statusCode).json(error.format());

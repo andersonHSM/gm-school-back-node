@@ -3,4 +3,5 @@ export interface ClassHasDisciplineHasScheduleModel {
   class_has_discipline_guid: string | ArrayLike<number>;
   schedule_guid: string | ArrayLike<number>;
   class_date: string;
+  is_exam_date: string;
 }
